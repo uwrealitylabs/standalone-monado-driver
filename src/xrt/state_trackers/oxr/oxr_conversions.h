@@ -13,6 +13,8 @@
 
 #include "xrt/xrt_defines.h"
 #include "xrt/xrt_space.h"
+#include "xrt/xrt_system.h"
+#include "xrt/xrt_compositor.h"
 #include "xrt/xrt_vulkan_includes.h"
 #include "xrt/xrt_openxr_includes.h"
 
@@ -327,6 +329,80 @@ xrt_hand_tracking_data_source_to_xr(enum xrt_input_name ht_input_name)
 	case XRT_INPUT_HT_CONFORMING_RIGHT: return XR_HAND_TRACKING_DATA_SOURCE_CONTROLLER_EXT;
 	default: assert(false); return XR_HAND_TRACKING_DATA_SOURCE_MAX_ENUM_EXT;
 	}
+}
+
+
+/*
+ *
+ * Swapchain
+ *
+ */
+
+static inline enum xrt_swapchain_usage_bits
+xr_swapchain_usage_to_xrt(XrSwapchainUsageFlags xr_usage)
+{
+	enum xrt_swapchain_usage_bits usage = 0;
+
+	if ((xr_usage & XR_SWAPCHAIN_USAGE_COLOR_ATTACHMENT_BIT) != 0) {
+		usage |= XRT_SWAPCHAIN_USAGE_COLOR;
+	}
+	if ((xr_usage & XR_SWAPCHAIN_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) != 0) {
+		usage |= XRT_SWAPCHAIN_USAGE_DEPTH_STENCIL;
+	}
+	if ((xr_usage & XR_SWAPCHAIN_USAGE_UNORDERED_ACCESS_BIT) != 0) {
+		usage |= XRT_SWAPCHAIN_USAGE_UNORDERED_ACCESS;
+	}
+	if ((xr_usage & XR_SWAPCHAIN_USAGE_TRANSFER_SRC_BIT) != 0) {
+		usage |= XRT_SWAPCHAIN_USAGE_TRANSFER_SRC;
+	}
+	if ((xr_usage & XR_SWAPCHAIN_USAGE_TRANSFER_DST_BIT) != 0) {
+		usage |= XRT_SWAPCHAIN_USAGE_TRANSFER_DST;
+	}
+	if ((xr_usage & XR_SWAPCHAIN_USAGE_SAMPLED_BIT) != 0) {
+		usage |= XRT_SWAPCHAIN_USAGE_SAMPLED;
+	}
+	if ((xr_usage & XR_SWAPCHAIN_USAGE_MUTABLE_FORMAT_BIT) != 0) {
+		usage |= XRT_SWAPCHAIN_USAGE_MUTABLE_FORMAT;
+	}
+	// aliased to XR_SWAPCHAIN_USAGE_INPUT_ATTACHMENT_BIT_MND
+	if ((xr_usage & XR_SWAPCHAIN_USAGE_INPUT_ATTACHMENT_BIT_KHR) != 0) {
+		usage |= XRT_SWAPCHAIN_USAGE_INPUT_ATTACHMENT;
+	}
+
+	return usage;
+}
+
+static inline XrSwapchainUsageFlags
+xrt_swapchain_usage_to_xr(enum xrt_swapchain_usage_bits bits)
+{
+	XrSwapchainUsageFlags xr = 0;
+
+	if ((bits & XRT_SWAPCHAIN_USAGE_COLOR) != 0) {
+		xr |= XR_SWAPCHAIN_USAGE_COLOR_ATTACHMENT_BIT;
+	}
+	if ((bits & XRT_SWAPCHAIN_USAGE_DEPTH_STENCIL) != 0) {
+		xr |= XR_SWAPCHAIN_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+	}
+	if ((bits & XRT_SWAPCHAIN_USAGE_UNORDERED_ACCESS) != 0) {
+		xr |= XR_SWAPCHAIN_USAGE_UNORDERED_ACCESS_BIT;
+	}
+	if ((bits & XRT_SWAPCHAIN_USAGE_TRANSFER_SRC) != 0) {
+		xr |= XR_SWAPCHAIN_USAGE_TRANSFER_SRC_BIT;
+	}
+	if ((bits & XRT_SWAPCHAIN_USAGE_TRANSFER_DST) != 0) {
+		xr |= XR_SWAPCHAIN_USAGE_TRANSFER_DST_BIT;
+	}
+	if ((bits & XRT_SWAPCHAIN_USAGE_SAMPLED) != 0) {
+		xr |= XR_SWAPCHAIN_USAGE_SAMPLED_BIT;
+	}
+	if ((bits & XRT_SWAPCHAIN_USAGE_MUTABLE_FORMAT) != 0) {
+		xr |= XR_SWAPCHAIN_USAGE_MUTABLE_FORMAT_BIT;
+	}
+	if ((bits & XRT_SWAPCHAIN_USAGE_INPUT_ATTACHMENT) != 0) {
+		xr |= XR_SWAPCHAIN_USAGE_INPUT_ATTACHMENT_BIT_KHR;
+	}
+
+	return xr;
 }
 
 
