@@ -364,6 +364,16 @@ oxr_session_enumerate_formats(struct oxr_logger *log,
                               uint32_t *formatCountOutput,
                               int64_t *formats);
 
+#ifdef OXR_HAVE_EXT_enumerate_swapchain_formats2
+XrResult
+oxr_session_enumerate_formats2(struct oxr_logger *log,
+                               struct oxr_session *sess,
+                               XrSwapchainFormatsEnumerateInfoEXT *enumerateInfo,
+                               uint32_t formatCapacityInput,
+                               uint32_t *formatCountOutput,
+                               int64_t *formats);
+#endif
+
 /*!
  * Change the state of the session, queues a event.
  */
