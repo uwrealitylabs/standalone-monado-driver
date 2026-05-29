@@ -430,10 +430,7 @@ option_with_deps(XRT_FEATURE_OPENXR_BODY_TRACKING_FIDELITY_META "Enable XR_META_
 option(XRT_FEATURE_OPENXR_INTERACTION_EXT_EYE_GAZE "Enable XR_EXT_eye_gaze_interaction" ON)
 option(XRT_FEATURE_OPENXR_INTERACTION_EXT_HAND "Enable XR_EXT_hand_interaction" ON)
 option(XRT_FEATURE_OPENXR_INTERACTION_EXT_PALM_POSE "Enable XR_EXT_palm_pose" OFF)
-# This can't be enabled currently because the current code in Monado doesn't
-# follow the spec. Common code or driver code to correctly map to the generic
-# controller interaction profile will need to be added.
-option(XRT_FEATURE_OPENXR_INTERACTION_KHR_GENERIC "Enable XR_KHR_generic_controller" OFF)
+option(XRT_FEATURE_OPENXR_INTERACTION_KHR_GENERIC "Enable XR_KHR_generic_controller" ON)
 option(XRT_FEATURE_OPENXR_INTERACTION_ML2 "Enable XR_ML_ml2_controller_interaction" ON)
 option(XRT_FEATURE_OPENXR_INTERACTION_MNDX "Enable XR_MNDX_ball_on_a_stick_controller, XR_MNDX_hydra, XR_MNDX_flipvr, and XR_MNDX_system_buttons" ON)
 option(XRT_FEATURE_OPENXR_INTERACTION_MSFT_HAND "Enable XR_MSFT_hand_interaction" OFF)
