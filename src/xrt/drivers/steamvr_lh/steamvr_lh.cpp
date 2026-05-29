@@ -362,14 +362,6 @@ Context::setup_controller(const char *serial, vr::ITrackedDeviceServerDriver *dr
 
 	enum xrt_device_name name = device->name;
 	switch (name) {
-	case XRT_DEVICE_VIVE_WAND:
-		device->binding_profiles = vive_binding_profiles_wand;
-		device->binding_profile_count = vive_binding_profiles_wand_count;
-		break;
-	case XRT_DEVICE_INDEX_CONTROLLER:
-		device->binding_profiles = vive_binding_profiles_index;
-		device->binding_profile_count = vive_binding_profiles_index_count;
-		break;
 	case XRT_DEVICE_FLIPVR:
 		device->binding_profiles = vive_binding_profiles_flipvr;
 		device->binding_profile_count = vive_binding_profiles_flipvr_count;
