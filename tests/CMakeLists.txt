@@ -42,7 +42,7 @@ if(XRT_HAVE_VULKAN)
 		)
 endif()
 if(XRT_FEATURE_OPENXR)
-	list(APPEND tests tests_input_transform)
+	list(APPEND tests tests_input_transform tests_binding_registry)
 endif()
 if(XRT_HAVE_OPENGL
    AND XRT_HAVE_OPENGL_GLX
@@ -130,6 +130,9 @@ endif()
 if(XRT_FEATURE_OPENXR)
 	target_link_libraries(
 		tests_input_transform PRIVATE st_oxr xrt-interfaces xrt-external-openxr
+		)
+	target_link_libraries(
+		tests_binding_registry PRIVATE st_oxr xrt-interfaces xrt-external-openxr
 		)
 endif()
 if(_have_opengl_test)

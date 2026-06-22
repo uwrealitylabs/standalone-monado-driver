@@ -1,0 +1,38 @@
+{
+	"simple_to_index_controller": {
+		"source_profile": "/interaction_profiles/khr/simple_controller",
+		"target_profile": "/interaction_profiles/valve/index_controller",
+		"helpers": [
+			"/helper/controller/poses",
+			"/helper/controller/output"
+		],
+		"bindings": {
+			"/user/hand/left/input/menu": "/user/hand/left/input/b",
+			"/user/hand/left/input/menu/click": "/user/hand/left/input/b/click",
+			"/user/hand/left/input/select": "/user/hand/left/input/trigger/value",
+			"/user/hand/left/input/select/click": "/user/hand/left/input/trigger/value",
+			"/user/hand/right/input/menu": "/user/hand/right/input/b",
+			"/user/hand/right/input/menu/click": "/user/hand/right/input/b/click",
+			"/user/hand/right/input/select": "/user/hand/right/input/trigger/value",
+			"/user/hand/right/input/select/click": "/user/hand/right/input/trigger/value"
+		}
+	},
+	"simple_to_vive_controller": {
+		"source_profile": "/interaction_profiles/khr/simple_controller",
+		"target_profile": "/interaction_profiles/htc/vive_controller",
+		"helpers": [
+			"/helper/controller/poses",
+			"/helper/controller/output"
+		],
+		"bindings": {
+			"/user/hand/left/input/menu": true,
+			"/user/hand/left/input/menu/click": true,
+			"/user/hand/left/input/select": "/user/hand/left/input/trigger/value",
+			"/user/hand/left/input/select/click": "/user/hand/left/input/trigger/value",
+			"/user/hand/right/input/menu": true,
+			"/user/hand/right/input/menu/click": true,
+			"/user/hand/right/input/select": "/user/hand/right/input/trigger/value",
+			"/user/hand/right/input/select/click": "/user/hand/right/input/trigger/value"
+		}
+	}
+}

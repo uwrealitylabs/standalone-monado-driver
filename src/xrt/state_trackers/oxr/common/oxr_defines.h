@@ -46,21 +46,6 @@ extern "C" {
 // clang-format on
 
 /*!
- * Sub action paths.
- *
- * @ingroup oxr_main
- */
-enum oxr_subaction_path
-{
-	OXR_SUB_ACTION_PATH_USER,
-	OXR_SUB_ACTION_PATH_HEAD,
-	OXR_SUB_ACTION_PATH_LEFT,
-	OXR_SUB_ACTION_PATH_RIGHT,
-	OXR_SUB_ACTION_PATH_GAMEPAD,
-	OXR_SUB_ACTION_PATH_EYES,
-};
-
-/*!
  * Region of a dpad binding that an input is mapped to
  *
  * @ingroup oxr_main

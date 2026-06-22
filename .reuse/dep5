@@ -146,3 +146,8 @@ Comment: SPDX-License-Identifier missing.
 Files: src/external/metrics/*
 Copyright: 2022, Collabora, Ltd.
 License: BSL-1.0
+
+Files: src/xrt/auxiliary/bindings/rebindings/*
+Copyright: 2026, NVIDIA CORPORATION.
+License: BSL-1.0 OR CC0-1.0
+Comment: JSON data files cannot carry SPDX headers cleanly.

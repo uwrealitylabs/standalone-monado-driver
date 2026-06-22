@@ -45,7 +45,6 @@
 #include "actions/oxr_dpad_state.h"
 #include "actions/oxr_session_action_context.h"
 #include "actions/oxr_session_attached_actions.h"
-#include "actions/oxr_interaction_profile_array.h"
 #include "actions/oxr_instance_path_cache.h"
 #include "actions/oxr_instance_action_context.h"
 
@@ -1446,64 +1445,6 @@ oxr_session_request_display_refresh_rate(struct oxr_logger *log, struct oxr_sess
 
 
 /*!
- * dpad emulation settings from oxr_interaction_profile
- */
-struct oxr_dpad_emulation
-{
-	enum oxr_subaction_path subaction_path;
-	XrPath *paths;
-	uint32_t path_count;
-	enum xrt_input_name position;
-	enum xrt_input_name activate; // Can be zero
-};
-
-/*!
- * A single interaction profile.
- */
-struct oxr_interaction_profile
-{
-	XrPath path;
-
-	//! Used to lookup @ref xrt_binding_profile for fallback.
-	enum xrt_device_name xname;
-
-	//! Name presented to the user.
-	const char *localized_name;
-
-	struct oxr_binding *bindings;
-	size_t binding_count;
-
-	struct oxr_dpad_emulation *dpads;
-	size_t dpad_count;
-
-	struct oxr_dpad_state dpad_state;
-};
-
-/*!
- * Interaction profile binding state.
- */
-struct oxr_binding
-{
-	XrPath *paths;
-	uint32_t path_count;
-
-	//! Name presented to the user.
-	const char *localized_name;
-
-	enum oxr_subaction_path subaction_path;
-
-	uint32_t act_key_count;
-	uint32_t *act_keys;
-	//! store which entry in paths was suggested, for each action key
-	uint32_t *preferred_binding_path_index;
-
-	enum xrt_input_name input;
-	enum xrt_input_name dpad_activate;
-
-	enum xrt_output_name output;
-};
-
-/*!
  * @defgroup oxr_input OpenXR input
  * @ingroup oxr_main
  *
@@ -1601,13 +1542,12 @@ struct oxr_action_state
  */
 struct oxr_action_input
 {
-	struct xrt_device *xdev;                // Used for poses and transform is null.
-	struct xrt_input *input;                // Ditto
-	enum xrt_input_name dpad_activate_name; // used to activate dpad emulation if present
-	struct xrt_input *dpad_activate;        // used to activate dpad emulation if present
+	struct xrt_device *xdev; // Used for poses and transform is null.
+	struct xrt_input *input; // Ditto
+	const struct oxr_binding_point *binding_point;
+	struct oxr_priority_group_state *priority_group_state;
 	struct oxr_input_transform *transforms;
 	size_t transform_count;
-	XrPath bound_path;
 };
 
 /*!
@@ -1622,7 +1562,7 @@ struct oxr_action_output
 {
 	struct xrt_device *xdev;
 	enum xrt_output_name name;
-	XrPath bound_path;
+	const struct oxr_binding_point *binding_point;
 };
 
 
