@@ -142,3 +142,45 @@ oxr_io_cache_sync(struct oxr_logger *log, struct oxr_io_cache *cache, bool *out_
 
 	return XR_SUCCESS;
 }
+
+const struct xrt_io_cache_device *
+oxr_io_cache_find_device(const struct oxr_io_cache *cache, struct xrt_device_id id)
+{
+	for (uint32_t i = 0; i < cache->info.device_count; i++) {
+		if (cache->info.devices[i].id.val == id.val) {
+			return &cache->info.devices[i];
+		}
+	}
+
+	return NULL;
+}
+
+struct xrt_input *
+oxr_io_cache_find_input(const struct oxr_io_cache *cache,
+                        const struct xrt_io_cache_device *dev,
+                        enum xrt_input_name name)
+{
+	struct xrt_input *dev_inputs = oxr_io_cache_device_inputs(cache, dev);
+	for (uint32_t k = 0; k < dev->input_count; k++) {
+		if (dev_inputs[k].name == name) {
+			return &dev_inputs[k];
+		}
+	}
+
+	return NULL;
+}
+
+bool
+oxr_io_cache_has_output(const struct oxr_io_cache *cache,
+                        const struct xrt_io_cache_device *dev,
+                        enum xrt_output_name name)
+{
+	struct xrt_output *dev_outputs = oxr_io_cache_device_outputs(cache, dev);
+	for (uint32_t k = 0; k < dev->output_count; k++) {
+		if (dev_outputs[k].name == name) {
+			return true;
+		}
+	}
+
+	return false;
+}

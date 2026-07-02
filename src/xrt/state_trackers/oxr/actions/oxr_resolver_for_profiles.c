@@ -40,10 +40,6 @@ log_resolver_info(struct oxr_sink_logger *slog, const struct oxr_profile_resolve
 		         info->rebinding_profile->templ->target_profile_path,
 		         u_str_xrt_device_name(info->rebinding_target_profile->device_name));
 	}
-
-	if (info->xbp != NULL) {
-		oxr_slog(slog, "\n\t\t\tFallback xrt_binding_profile: %s", u_str_xrt_device_name(info->xbp->name));
-	}
 }
 
 static void
@@ -51,14 +47,12 @@ fill_binding_profiles(struct oxr_sink_logger *slog,
                       const struct oxr_binding_registry *registry,
                       const struct oxr_suggested_profile *profile,
                       const struct oxr_rebinding_profile *rebinding_profile,
-                      const struct xrt_binding_profile *xbp,
                       struct oxr_profile_resolver_info *info)
 {
 	assert(profile != NULL);
 
 	info->profile = profile;
 	info->rebinding_profile = rebinding_profile;
-	info->xbp = xbp;
 
 	if (!oxr_binding_registry_find_profile(registry, info->profile->path, &info->binding_profile)) {
 		oxr_slog(slog, "\n\t\tNo binding profile for suggested profile.");
@@ -82,13 +76,13 @@ static bool
 try_resolve_with_device_name(struct oxr_sink_logger *slog,
                              const struct oxr_binding_registry *registry,
                              const struct oxr_suggested_profile_array *suggested_profiles,
-                             struct xrt_device *xdev,
+                             const struct xrt_io_cache_device *dev,
                              enum xrt_device_name device_name,
                              struct oxr_profile_resolver_info *info)
 {
 	struct oxr_suggested_profile *profile = NULL;
-	assert(xdev != NULL);
-	assert(xdev->name != device_name);
+	assert(dev != NULL);
+	assert(dev->name != device_name);
 	assert(device_name != XRT_DEVICE_INVALID);
 
 	// First can we try to find the profile by the requested device name?
@@ -106,7 +100,7 @@ try_resolve_with_device_name(struct oxr_sink_logger *slog,
 	found = oxr_binding_registry_find_rebinding_from_source_for_device( //
 	    registry,                                                       //
 	    profile->path,                                                  //
-	    xdev->name,                                                     //
+	    dev->name,                                                      //
 	    &rebinding_profile);                                            //
 	if (found) {
 		fill_binding_profiles( //
@@ -114,25 +108,6 @@ try_resolve_with_device_name(struct oxr_sink_logger *slog,
 		    registry,          //
 		    profile,           // oxr_suggested_profile
 		    rebinding_profile, // oxr_rebinding_profile
-		    NULL,              // xrt_binding_profile
-		    info);             //
-		log_resolver_info(slog, info);
-		return true;
-	}
-
-	// Look for a binding profile for the requested device name.
-	for (size_t i = 0; i < xdev->binding_profile_count; i++) {
-		const struct xrt_binding_profile *xbp = &xdev->binding_profiles[i];
-		if (xbp->name != device_name) {
-			continue;
-		}
-
-		fill_binding_profiles( //
-		    slog,              //
-		    registry,          //
-		    profile,           // oxr_suggested_profile
-		    NULL,              // oxr_rebinding_profile
-		    xbp,               // xrt_binding_profile
 		    info);             //
 		log_resolver_info(slog, info);
 		return true;
@@ -145,13 +120,13 @@ static bool
 try_resolve_with_xdev(struct oxr_sink_logger *slog,
                       const struct oxr_binding_registry *registry,
                       const struct oxr_suggested_profile_array *suggested_profiles,
-                      struct xrt_device *xdev,
+                      const struct xrt_io_cache_device *dev,
                       struct oxr_profile_resolver_info *info)
 {
 	struct oxr_suggested_profile *profile = NULL;
 
-	// First can we try to find the profile by the requested xdev->name?
-	bool found = oxr_suggested_profile_array_find_by_device_name(suggested_profiles, xdev->name, &profile);
+	// First can we try to find the profile by the requested dev->name?
+	bool found = oxr_suggested_profile_array_find_by_device_name(suggested_profiles, dev->name, &profile);
 
 	// If the profile is found and the device name matches, use the profile.
 	if (found) {
@@ -160,7 +135,6 @@ try_resolve_with_xdev(struct oxr_sink_logger *slog,
 		    registry,          //
 		    profile,           // oxr_suggested_profile
 		    NULL,              // oxr_rebinding_profile
-		    NULL,              // xrt_binding_profile
 		    info);             //
 		log_resolver_info(slog, info);
 		return true;
@@ -171,7 +145,7 @@ try_resolve_with_xdev(struct oxr_sink_logger *slog,
 	found = oxr_suggested_profile_array_find_rebinding_for_device_name( //
 	    suggested_profiles,                                             //
 	    registry,                                                       //
-	    xdev->name,                                                     //
+	    dev->name,                                                      //
 	    &profile,                                                       //
 	    &rebinding_profile);                                            //
 	if (found) {
@@ -180,25 +154,6 @@ try_resolve_with_xdev(struct oxr_sink_logger *slog,
 		    registry,          //
 		    profile,           // oxr_suggested_profile
 		    rebinding_profile, // oxr_rebinding_profile
-		    NULL,              // xrt_binding_profile
-		    info);             //
-		log_resolver_info(slog, info);
-		return true;
-	}
-
-	for (size_t i = 0; i < xdev->binding_profile_count; i++) {
-		const struct xrt_binding_profile *xbp = &xdev->binding_profiles[i];
-		bool found = oxr_suggested_profile_array_find_by_device_name(suggested_profiles, xbp->name, &profile);
-		if (!found) {
-			continue;
-		}
-
-		fill_binding_profiles( //
-		    slog,              //
-		    registry,          //
-		    profile,           // oxr_suggested_profile
-		    NULL,              // oxr_rebinding_profile
-		    xbp,               // xrt_binding_profile
 		    info);             //
 		log_resolver_info(slog, info);
 		return true;
@@ -219,7 +174,7 @@ oxr_resolver_populate_profile(struct oxr_logger *log,
                               struct oxr_sink_logger *slog,
                               const struct oxr_binding_registry *registry,
                               const struct oxr_suggested_profile_array *suggested_profiles,
-                              struct xrt_device *xdev,
+                              const struct xrt_io_cache_device *dev,
                               enum xrt_device_name override_device_name,
                               struct oxr_profile_resolver_info *info)
 {
@@ -227,22 +182,21 @@ oxr_resolver_populate_profile(struct oxr_logger *log,
 	assert(slog != NULL);
 	assert(registry != NULL);
 	assert(suggested_profiles != NULL);
-	assert(xdev != NULL);
+	assert(dev != NULL);
 	assert(info != NULL);
 
 	U_ZERO(info);
 
 	// We are overriding the device name with a different one.
-	if (override_device_name != XRT_DEVICE_INVALID && override_device_name != xdev->name) {
+	if (override_device_name != XRT_DEVICE_INVALID && override_device_name != dev->name) {
 		oxr_slog(slog, "\n\t\t\toverride: %s", u_str_xrt_device_name(override_device_name));
-		if (try_resolve_with_device_name(slog, registry, suggested_profiles, xdev, override_device_name,
-		                                 info)) {
+		if (try_resolve_with_device_name(slog, registry, suggested_profiles, dev, override_device_name, info)) {
 			return;
 		}
 		oxr_slog(slog, "\n\t\t\t\tOverride failed");
 	}
 
-	if (try_resolve_with_xdev(slog, registry, suggested_profiles, xdev, info)) {
+	if (try_resolve_with_xdev(slog, registry, suggested_profiles, dev, info)) {
 		return;
 	}
 

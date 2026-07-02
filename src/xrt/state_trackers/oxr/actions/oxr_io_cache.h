@@ -100,6 +100,61 @@ oxr_io_cache_recreate(struct oxr_logger *log, struct oxr_io_cache *cache);
 XRT_CHECK_RESULT XrResult
 oxr_io_cache_sync(struct oxr_logger *log, struct oxr_io_cache *cache, bool *out_stale);
 
+/*!
+ * Find the layout entry of the device with @p id in the current snapshot,
+ * returns NULL if the device is not part of it.
+ *
+ * @public @memberof oxr_io_cache
+ */
+XRT_NONNULL_ALL const struct xrt_io_cache_device *
+oxr_io_cache_find_device(const struct oxr_io_cache *cache, struct xrt_device_id id);
+
+/*!
+ * The inputs of @p dev in @ref oxr_io_cache::inputs, @p dev must be an entry
+ * in the layout of @p cache.
+ *
+ * @public @memberof oxr_io_cache
+ */
+XRT_NONNULL_ALL static inline struct xrt_input *
+oxr_io_cache_device_inputs(const struct oxr_io_cache *cache, const struct xrt_io_cache_device *dev)
+{
+	return cache->inputs + dev->first_input;
+}
+
+/*!
+ * The outputs of @p dev in @ref oxr_io_cache::outputs, @p dev must be an entry
+ * in the layout of @p cache.
+ *
+ * @public @memberof oxr_io_cache
+ */
+XRT_NONNULL_ALL static inline struct xrt_output *
+oxr_io_cache_device_outputs(const struct oxr_io_cache *cache, const struct xrt_io_cache_device *dev)
+{
+	return cache->outputs + dev->first_output;
+}
+
+/*!
+ * Find the input called @p name on @p dev in the current snapshot. The snapshot
+ * names are primed by @ref oxr_io_cache_recreate, so this works for both
+ * statically-backed devices and cache-only devices (controllers).
+ *
+ * @public @memberof oxr_io_cache
+ */
+XRT_NONNULL_ALL struct xrt_input *
+oxr_io_cache_find_input(const struct oxr_io_cache *cache,
+                        const struct xrt_io_cache_device *dev,
+                        enum xrt_input_name name);
+
+/*!
+ * Whether @p dev exposes an output called @p name in the current snapshot.
+ *
+ * @public @memberof oxr_io_cache
+ */
+XRT_NONNULL_ALL bool
+oxr_io_cache_has_output(const struct oxr_io_cache *cache,
+                        const struct xrt_io_cache_device *dev,
+                        enum xrt_output_name name);
+
 
 #ifdef __cplusplus
 }
