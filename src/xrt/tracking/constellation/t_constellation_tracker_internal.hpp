@@ -26,6 +26,7 @@
 
 #include "math/m_api.h"
 
+#include <atomic>
 #include <vector>
 #include <memory>
 #include <mutex>
@@ -40,6 +41,8 @@
 #include "pose_metrics.h"
 #include "t_constellation_tracker.h"
 #include "optimizer/pose_optimize.hpp"
+#include "optimizer/rig_calibration.hpp"
+#include "optimizer/sensor_fusion.hpp"
 
 
 #define CT_TRACE(ct, ...) U_LOG_IFL_T(ct->log_level, __VA_ARGS__)
@@ -94,7 +97,13 @@ struct FoundDevicePose
 	xrt_pose Tcv_cam_device XRT_POSE_IDENTITY;
 	float average_blob_brightness;
 	RawPoseCovarianceMatrix covariance;
-	RawPoseCovarianceMatrix whitening;
+
+	/*!
+	 * Whether a found pose was already handled, this is present so that if a single sample is torn between some
+	 * devices fast recovering and some devices slow recovering, we push the fast recovery poses the moment they're
+	 * found rather than at the end of the slow recovery where the sample is "terminated".
+	 */
+	bool handled{false};
 };
 
 struct DeviceState
@@ -105,7 +114,7 @@ struct DeviceState
 	//! The predicted pose of the device in the world at the time of the sample.
 	std::optional<xrt_pose> Txr_world_device_prior{std::nullopt};
 	//! The predicted pose of the device relative to the camera at the time of the sample.
-	std::optional<xrt_pose> Tcv_cam_device_predicted{std::nullopt};
+	std::optional<xrt_space_relation> Tcv_cam_device_predicted{std::nullopt};
 
 	//! The final found pose of the device in this specific sample.
 	std::optional<FoundDevicePose> found_pose{std::nullopt};
@@ -194,7 +203,6 @@ public: // Methods
 struct OldOptimizationData
 {
 	RawPoseCovarianceMatrix covariance;
-	RawPoseCovarianceMatrix whitening;
 };
 
 struct Camera
@@ -252,6 +260,8 @@ public: // Fields
 		bool has_concrete_pose;
 	} locked_data;
 
+	std::atomic<uint32_t> shallow_searches_failed{0};
+
 public: // Methods (t_constellation_tracker.cpp)
 	static Camera *
 	Get(t_blob_sink *tbs)
@@ -286,14 +296,17 @@ public: // Methods (t_constellation_tracker.cpp)
 	tryDevicePose(Device *device,
 	              CameraSample &sample,
 	              DeviceState &device_state,
-	              const std::optional<xrt_pose> &Tcv_cam_device_prior,
+	              const std::optional<xrt_space_relation> &Tcv_cam_device_prior,
 	              const xrt_pose &Tcv_cam_device_candidate);
 
 	bool
 	tryDeviceBlobRecovery(Device *device,
 	                      CameraSample &sample,
 	                      DeviceState &device_state,
-	                      const std::optional<xrt_pose> &Tcv_cam_device_prior);
+	                      const std::optional<xrt_space_relation> &Tcv_cam_device_prior);
+
+	void
+	handleProcessingComplete(CameraSample &sample);
 
 	void
 	processSampleSlow(CameraSample &sample);
@@ -338,12 +351,12 @@ public: // Methods
 struct DeviceLastPose
 {
 public: // Fields
-	std::optional<xrt_pose> Txr_world_device;
+	xrt_pose Txr_world_device;
 	xrt_pose Tcv_cam_device;
 	timepoint_ns timestamp_ns;
 
 public: // Methods
-	DeviceLastPose(std::optional<xrt_pose> Txr_world_device, xrt_pose Tcv_cam_device, timepoint_ns timestamp_ns);
+	DeviceLastPose(xrt_pose Txr_world_device, xrt_pose Tcv_cam_device, timepoint_ns timestamp_ns);
 };
 
 struct DeviceBase
@@ -359,8 +372,13 @@ public: // Fields
 
 	t_constellation_device_id_t id;
 
+	//! Devices are disabled by default, and the constellation tracker must choose to enable them.
+	std::atomic<bool> enabled{false};
+
 	//! The owner tracker, so we can retrieve it from the IMU sink callback
 	ConstellationTracker *tracker;
+
+	std::unique_ptr<sensor_fusion::SensorFusion> sensor_fusion{};
 
 	// @todo remove when clang-format is updated in CI
 	// clang-format off
@@ -419,7 +437,11 @@ struct ConstellationTrackerBase
 	xrt_tracking_origin tracking_origin = {
 	    .name = "Constellation Tracker",
 	    .type = XRT_TRACKING_TYPE_CONSTELLATION,
-	    .initial_offset = XRT_POSE_IDENTITY,
+	    .initial_offset =
+	        {
+	            .orientation = XRT_QUAT_IDENTITY,
+	            .position = {.x = 0, .y = 1.2, .z = 0},
+	        },
 	};
 };
 
@@ -429,7 +451,7 @@ public: // Fields
 	//! Whether the constellation tracker is running
 	bool running = true;
 
-	enum u_logging_level log_level = U_LOGGING_WARN;
+	enum u_logging_level log_level;
 
 	t_constellation_tracker_params params;
 
@@ -443,6 +465,11 @@ public: // Fields
 	t_constellation_device_id_t next_device_id{0};
 
 	std::unique_ptr<DataRecorder> data_recorder{};
+
+	mutable os::Mutex rig_calibration_lock{};
+	os_thread_helper rig_calibration_thread{};
+	bool running_calibration{false};
+	std::unique_ptr<rig_calibration::RigCalibration> rig_calibration{};
 
 #ifdef XRT_FEATURE_RERUN
 	std::unique_ptr<struct RerunContext> rerun_stream{};
@@ -473,6 +500,12 @@ public: // Methods
 	ConstellationTracker &
 	operator=(ConstellationTracker &&) = delete;
 
+	bool
+	needSensorCalibration();
+
+	bool
+	checkSensorCalibration();
+
 	void
 	setupVariableTracking();
 
@@ -481,6 +514,9 @@ public: // Methods
 
 	void
 	removeDevice(t_constellation_device_id_t device_id);
+
+	void
+	getTrackedPose(t_constellation_device_id_t device_id, timepoint_ns when_ns, xrt_space_relation &out_relation);
 };
 
 }; // namespace xrt::tracking::constellation
