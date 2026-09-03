@@ -1496,6 +1496,17 @@ struct oxr_action_set_attachment
 	//! Which sub-action paths are requested on the latest sync.
 	struct oxr_subaction_paths requested_subaction_paths;
 
+	/*!
+	 * Effective action-set priority from the latest xrSyncActions.
+	 *
+	 * Reset to @ref oxr_action_set_ref::priority at the start of each
+	 * successful focused sync, then overwritten only for action sets in that
+	 * sync's active list (including XR_EXT_active_action_set_priority
+	 * overrides). Used after sync, for example when enumerating bound
+	 * sources, to apply the same priority suppression as input combining.
+	 */
+	uint32_t last_sync_priority;
+
 	//! An array of action attachments we own.
 	struct oxr_action_attachment *act_attachments;
 
