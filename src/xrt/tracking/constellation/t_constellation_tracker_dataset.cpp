@@ -277,6 +277,7 @@ void
 DataSerializer::write(const CameraSample &value)
 {
 	this->write(static_cast<uint64_t>(value.id));
+	this->write(static_cast<uint64_t>(value.sequence_id));
 	this->write(static_cast<uint64_t>(value.timestamp_ns));
 
 	this->write(static_cast<uint32_t>(value.blob_count));
@@ -299,6 +300,7 @@ void
 DataSerializer::read(CameraSample &value)
 {
 	this->read(value.id);
+	this->read(value.sequence_id);
 
 	uint64_t timestamp_ns;
 	this->read(timestamp_ns);
