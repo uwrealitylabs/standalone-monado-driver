@@ -66,6 +66,7 @@ add_library(
 	common/oxr_handle_array.h
 	common/oxr_handle_base.c
 	common/oxr_handle_base.h
+	common/oxr_handle_cast.h
 	common/oxr_refcounted.h
 	path/oxr_path_store.c
 	path/oxr_path_store.h
