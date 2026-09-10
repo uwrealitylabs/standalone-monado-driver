@@ -54,24 +54,27 @@ find_best_matching_led(struct pose_metrics_visible_led_info *led_points,
 
 	for (int i = 0; i < num_leds; i++) {
 		struct pose_metrics_visible_led_info *led_info = led_points + i;
-		struct xrt_vec2 *pos_px = &led_info->pos_px;
-		double led_radius_px = led_info->led_radius_px;
-		double dx = fabs((double)pos_px->x - blob->center.x);
-		double dy = fabs((double)pos_px->y - blob->center.y);
+		struct xrt_vec2 *pos_px_undistorted = &led_info->pos_px_undistorted;
+		double led_radius_px_undistorted = led_info->led_radius_px_undistorted;
+		double dx = fabs((double)pos_px_undistorted->x - blob->center_undistorted.x);
+		double dy = fabs((double)pos_px_undistorted->y - blob->center_undistorted.y);
 		double sqerror = dx * dx + dy * dy;
 
-		// If the blob is much larger than the LED in either dimension, don't match
-		if (blob->size.x > led_info->led_radius_px * 4 || blob->size.y > led_info->led_radius_px * 4) {
+		// If the blob is much larger than the LED in either dimension, don't match.
+		// @note: We're technically comparing distorted size to undistorted size, but that's a fine enough
+		// approximation.
+		if (blob->size.x > led_info->led_radius_px_undistorted * 4 ||
+		    blob->size.y > led_info->led_radius_px_undistorted * 4) {
 			continue;
 		}
 
 		// Check if the LED falls within the bounding box is closer to the camera (smaller Z),
 		// or is at least ed_radius closer to the blob center
-		if (sqerror < (led_radius_px * led_radius_px)) {
+		if (sqerror < (led_radius_px_undistorted * led_radius_px_undistorted)) {
 			leds_within_range++;
 
 			if (best_led_index < 0 || best_z > led_info->pos_m.z ||
-			    (sqerror + led_radius_px) < best_sqerror) {
+			    (sqerror + led_radius_px_undistorted) < best_sqerror) {
 				best_z = led_info->pos_m.z;
 				best_led_index = i;
 				best_sqerror = sqerror;
@@ -80,23 +83,24 @@ find_best_matching_led(struct pose_metrics_visible_led_info *led_points,
 	}
 
 	if (leds_within_range > 1 && u_log_get_global_level() >= U_LOGGING_TRACE) {
-		U_LOG_T("Multiple LEDs match blob @ %f, %f. best_sqerror %f LED %d z %f", blob->center.x,
-		        blob->center.y, best_sqerror, best_led_index, led_points[best_led_index].pos_m.z);
+		U_LOG_T("Multiple LEDs match blob @ %f, %f. best_sqerror %f LED %d z %f", blob->center_undistorted.x,
+		        blob->center_undistorted.y, best_sqerror, best_led_index, led_points[best_led_index].pos_m.z);
 
 		for (int i = 0; i < num_leds; i++) {
 			struct pose_metrics_visible_led_info *led_info = led_points + i;
-			struct xrt_vec2 *pos_px = &led_info->pos_px;
-			struct xrt_vec3 *pos_m = &led_info->pos_m;
-			double led_radius_px = led_info->led_radius_px;
-			double dx = fabs((double)pos_px->x - blob->center.x);
-			double dy = fabs((double)pos_px->y - blob->center.y);
+			struct xrt_vec2 *pos_px_undistorted = &led_info->pos_px_undistorted;
+			struct xrt_vec3 *pos_m_undistorted = &led_info->pos_m;
+			double led_radius_px = led_info->led_radius_px_undistorted;
+			double dx = fabs((double)pos_px_undistorted->x - blob->center_undistorted.x);
+			double dy = fabs((double)pos_px_undistorted->y - blob->center_undistorted.y);
 			double sqerror = dx * dx + dy * dy;
 
 			// Check if the LED falls within the bounding box has smaller error distance,
 			// or is closer to the camera (smaller Z)
 			if (sqerror < (led_radius_px * led_radius_px)) {
 				U_LOG_T("LED %d sqerror %f pos px %f %f radius %f metres %f %f %f", i, sqerror,
-				        pos_px->x, pos_px->y, led_radius_px, pos_m->x, pos_m->y, pos_m->z);
+				        pos_px_undistorted->x, pos_px_undistorted->y, led_radius_px,
+				        pos_m_undistorted->x, pos_m_undistorted->y, pos_m_undistorted->z);
 			}
 		}
 	}
@@ -159,7 +163,9 @@ project_led_points(struct t_constellation_tracker_led_model *led_model,
 
 		math_pose_transform_point(pose, &led_model->leds[i].position, tmp);
 
-		if (!t_camera_models_project(&calib->calib, tmp->x, tmp->y, tmp->z, &out_points[i].x,
+		// @note We're using the pinhole camera model since we're later comparing them to the blob
+		//       undistorted pixel coordinates
+		if (!t_camera_models_project(&calib->calib_pinhole, tmp->x, tmp->y, tmp->z, &out_points[i].x,
 		                             &out_points[i].y)) {
 			return false;
 		}
@@ -180,13 +186,13 @@ get_visible_leds(const struct xrt_pose *T_cam_obj,
 	struct xrt_vec3 led_out_positions[MAX_OBJECT_LEDS] = {0};
 	struct xrt_vec2 led_out_points[MAX_OBJECT_LEDS] = {0};
 
-	// Project LEDs into the distorted image space
+	// Project LEDs into our image space
 	if (!project_led_points(led_model, calib, T_cam_obj, led_out_positions, led_out_points)) {
 		return false;
 	}
 
 	// Compute LED pixel size based on model distance below using the larger X/Y focal length and LED's Z value
-	const double focal_length = MAX(calib->calib.fx, calib->calib.fy);
+	const double focal_length = MAX(calib->calib_pinhole.fx, calib->calib_pinhole.fy);
 
 	struct xrt_pose T_obj_cam = {0};
 	math_pose_invert(T_cam_obj, &T_obj_cam);
@@ -204,9 +210,9 @@ get_visible_leds(const struct xrt_pose *T_cam_obj,
 			continue;
 		}
 
-		// Outside the visible screen space
-		if (led_pos_px->x < 0 || led_pos_px->y < 0 || led_pos_px->x >= calib->width ||
-		    led_pos_px->y >= calib->height) {
+		// Outside the visible screen space (the bounding box of the frame's undistorted border)
+		if (led_pos_px->x < calib->left_pinhole || led_pos_px->x > calib->right_pinhole ||
+		    led_pos_px->y < calib->top_pinhole || led_pos_px->y > calib->bottom_pinhole) {
 			continue;
 		}
 
@@ -243,9 +249,9 @@ get_visible_leds(const struct xrt_pose *T_cam_obj,
 
 		struct pose_metrics_visible_led_info *led_info = &visible_led_points[(*num_visible_leds)++];
 		led_info->led = leds + i;
-		led_info->pos_px = *led_pos_px;
+		led_info->pos_px_undistorted = *led_pos_px;
 		led_info->pos_m = *led_pos_m;
-		led_info->led_radius_px = led_radius_px;
+		led_info->led_radius_px_undistorted = led_radius_px;
 		led_info->matched_blob = NULL;
 		led_info->facing_dot = facing_dot;
 	}
@@ -264,18 +270,18 @@ get_visible_leds_bounds(struct pose_metrics_visible_led_info *visible_led_points
 
 	const struct pose_metrics_visible_led_info *led_info = &visible_led_points[0];
 	(*bounds) = (struct pose_rect){
-	    .left = led_info->pos_px.x - led_info->led_radius_px,
-	    .top = led_info->pos_px.y - led_info->led_radius_px,
-	    .right = led_info->pos_px.x + 2 * led_info->led_radius_px,
-	    .bottom = led_info->pos_px.y + 2 * led_info->led_radius_px,
+	    .left = led_info->pos_px_undistorted.x - led_info->led_radius_px_undistorted,
+	    .top = led_info->pos_px_undistorted.y - led_info->led_radius_px_undistorted,
+	    .right = led_info->pos_px_undistorted.x + 2 * led_info->led_radius_px_undistorted,
+	    .bottom = led_info->pos_px_undistorted.y + 2 * led_info->led_radius_px_undistorted,
 	};
 
 	for (int i = 1; i < num_visible_leds; ++i) {
 		const struct pose_metrics_visible_led_info *led_info = &visible_led_points[i];
 
-		expand_rect(bounds, led_info->pos_px.x - led_info->led_radius_px,
-		            led_info->pos_px.y - led_info->led_radius_px, 2 * led_info->led_radius_px,
-		            2 * led_info->led_radius_px);
+		expand_rect(bounds, led_info->pos_px_undistorted.x - led_info->led_radius_px_undistorted,
+		            led_info->pos_px_undistorted.y - led_info->led_radius_px_undistorted,
+		            2 * led_info->led_radius_px_undistorted, 2 * led_info->led_radius_px_undistorted);
 	}
 
 	return true;
@@ -326,8 +332,8 @@ pose_metrics_match_pose_to_blobs(const struct xrt_pose *pose,
 		}
 
 		// Ignore blobs that are outside the pose bounding box
-		if (b->center.x < bounds->left || b->center.y < bounds->top || b->center.x > bounds->right ||
-		    b->center.y > bounds->bottom) {
+		if (b->center_undistorted.x < bounds->left || b->center_undistorted.y < bounds->top ||
+		    b->center_undistorted.x > bounds->right || b->center_undistorted.y > bounds->bottom) {
 			continue;
 		}
 
@@ -352,8 +358,9 @@ pose_metrics_match_pose_to_blobs(const struct xrt_pose *pose,
 			struct t_constellation_tracker_led *match_led = led_info->led;
 			t_constellation_led_id_it led_id = match_led->id;
 			if (b->matched_device_led_id != led_id || b->matched_device_id != device_id) {
-				LOG_SPEW("mismatched LED id %d blob %d (@ %f,%f) has %d/%d", led_id, i, b->center.x,
-				         b->center.y, b->matched_device_id, b->matched_device_led_id);
+				LOG_SPEW("mismatched LED id %d blob %d (@ %f,%f) has %d/%d", led_id, i,
+				         b->center_undistorted.x, b->center_undistorted.y, b->matched_device_id,
+				         b->matched_device_led_id);
 
 				all_led_ids_matched = false;
 			}

@@ -262,12 +262,12 @@ CameraSample::markMatchingBlobs(ConstellationTracker *ct,
 			b->matched_device_id = device_id;
 
 			CT_DEBUG(ct, "Marking LED %d/%d at %f,%f angle %f now %d (was %d)", device_id, led->id,
-			         b->center.x, b->center.y, RAD_TO_DEG(acosf(led_info.facing_dot)),
+			         b->center_distorted.x, b->center_distorted.y, RAD_TO_DEG(acosf(led_info.facing_dot)),
 			         b->matched_device_led_id, /* b->prev_led_id */ -1);
 		} else {
 			CT_DEBUG(ct, "No blob for device %d LED %d @ %f,%f size %f px angle %f", device_id, led->id,
-			         led_info.pos_px.x, led_info.pos_px.y, 2 * led_info.led_radius_px,
-			         RAD_TO_DEG(acosf(led_info.facing_dot)));
+			         led_info.pos_px_undistorted.x, led_info.pos_px_undistorted.y,
+			         2 * led_info.led_radius_px_undistorted, RAD_TO_DEG(acosf(led_info.facing_dot)));
 		}
 	}
 }
@@ -285,15 +285,9 @@ Camera::Camera(ConstellationTracker *tracker,
                size_t index)
     : tracker(tracker), mosaic(mosaic), calibration(camera_params.calibration), index(index)
 {
-	this->tracker = tracker;
-	this->mosaic = mosaic;
-	this->calibration = camera_params.calibration;
-	this->model = {
-	    .width = calibration.image_size_pixels.w,
-	    .height = calibration.image_size_pixels.h,
-	    .calib = {},
-	};
-	t_camera_model_params_from_t_camera_calibration(&this->calibration, &this->model.calib);
+	struct t_camera_model_params calib_true;
+	t_camera_model_params_from_t_camera_calibration(&this->calibration, &calib_true);
+	this->model = camera_model_init(calibration.image_size_pixels.w, calibration.image_size_pixels.h, &calib_true);
 
 	this->locked_data = {
 	    .Txr_origin_cam = camera_params.pose_in_origin,
@@ -486,7 +480,7 @@ Camera::tryDeviceBlobRecovery(Device *device,
 	bool success = optimizePose(           //
 	    tracker->log_level,                //
 	    tracker->deterministic,            //
-	    this->model.calib,                 //
+	    this->model,                       //
 	    Tcv_cam_device,                    //
 	    sample.blobs,                      //
 	    sample.blob_count,                 //
@@ -969,7 +963,7 @@ Camera::pushPose(CameraSample &camera_sample,
 		bool success = optimizePose(   //
 		    tracker->log_level,        //
 		    tracker->deterministic,    //
-		    this->model.calib,         //
+		    this->model,               //
 		    Tcv_cam_device,            //
 		    camera_sample.blobs,       //
 		    camera_sample.blob_count,  //
@@ -988,7 +982,7 @@ Camera::pushPose(CameraSample &camera_sample,
 				// directly.
 				computePoseCovariance(         //
 				    tracker->log_level,        //
-				    this->model.calib,         //
+				    this->model,               //
 				    Tcv_cam_device,            //
 				    camera_sample.blobs,       //
 				    camera_sample.blob_count,  //
@@ -1301,7 +1295,7 @@ ConstellationTracker::ConstellationTracker(t_constellation_tracker_params *param
 			this->rig_calibration->addCamera({
 			    .mosaic_idx = mosaic->index,
 			    .camera_idx = camera->index,
-			    .params = camera->model.calib,
+			    .params = camera->model,
 			    .Tcv_world_cam = Tcv_origin_cam,
 			    .has_concrete_pose = camera->locked_data.has_concrete_pose,
 			});

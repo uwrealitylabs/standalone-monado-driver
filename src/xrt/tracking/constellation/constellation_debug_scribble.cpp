@@ -52,7 +52,7 @@ scribble_led_model(xrt_frame *frame,
 	                                 &camera.model, &visible_info);
 
 	xrt_vec2 projected_model_origin_point;
-	if (t_camera_models_project(&camera.model.calib, Tcv_cam_model.position.x, Tcv_cam_model.position.y,
+	if (t_camera_models_project(&camera.model.calib_true, Tcv_cam_model.position.x, Tcv_cam_model.position.y,
 	                            Tcv_cam_model.position.z, &projected_model_origin_point.x,
 	                            &projected_model_origin_point.y)) {
 		// Scribble the origin point of the LED model
@@ -74,13 +74,14 @@ scribble_led_model(xrt_frame *frame,
 
 		const xrt_colour_rgba_u8 &led_colour = matched ? matched_colour : unmatched_colour;
 
-		// Scribble where the LED is
-		u_frame_scribble_cross(frame, led_info->pos_px.x, led_info->pos_px.y, 5, &led_colour);
+		// Scribble where the LED is, @todo this needs to be distorted eventually
+		u_frame_scribble_cross(frame, led_info->pos_px_undistorted.x, led_info->pos_px_undistorted.y, 5,
+		                       &led_colour);
 
 		std::string led_name = std::to_string(led_info->led->id);
 		// Scribble the LED name
-		u_frame_scribble_text(frame, led_info->pos_px.x + 5, led_info->pos_px.y + 5, led_name.c_str(), 16,
-		                      &led_colour);
+		u_frame_scribble_text(frame, led_info->pos_px_undistorted.x + 5, led_info->pos_px_undistorted.y + 5,
+		                      led_name.c_str(), 16, &led_colour);
 	}
 }
 
@@ -94,12 +95,12 @@ scribble_blobs(xrt_frame *frame, Camera &camera, CameraSample &sample)
 		                                      ? device_id_to_color(blob.matched_device_id)
 		                                      : xrt_colour_rgba_u8{255, 255, 255, 255};
 
-		u_frame_scribble_cross(frame, blob.center.x, blob.center.y, 5, &colour);
+		u_frame_scribble_cross(frame, blob.center_distorted.x, blob.center_distorted.y, 5, &colour);
 
 		std::string blob_name;
 		if (camera.scribble_settings.draw_blob_ids) {
 			if (blob_name.length() > 0) {
-				blob_name += " ";
+				blob_name += ' ';
 			}
 
 			blob_name += "b:" + std::to_string(blob.blob_id);
@@ -107,7 +108,7 @@ scribble_blobs(xrt_frame *frame, Camera &camera, CameraSample &sample)
 
 		if (camera.scribble_settings.draw_blob_device_ids) {
 			if (blob_name.length() > 0) {
-				blob_name += " ";
+				blob_name += ' ';
 			}
 
 			if (blob.matched_device_id != XRT_CONSTELLATION_INVALID_DEVICE_ID) {
@@ -119,7 +120,7 @@ scribble_blobs(xrt_frame *frame, Camera &camera, CameraSample &sample)
 
 		if (camera.scribble_settings.draw_blob_led_ids) {
 			if (blob_name.length() > 0) {
-				blob_name += " ";
+				blob_name += ' ';
 			}
 
 			if (blob.matched_device_led_id != XRT_CONSTELLATION_INVALID_LED_ID) {
@@ -129,7 +130,12 @@ scribble_blobs(xrt_frame *frame, Camera &camera, CameraSample &sample)
 			}
 		}
 
-		u_frame_scribble_text(frame, blob.center.x + 5, blob.center.y + 5, blob_name.c_str(), 16, &colour);
+		u_frame_scribble_text(frame,                       //
+		                      blob.center_distorted.x + 5, //
+		                      blob.center_distorted.y + 5, //
+		                      blob_name.c_str(),           //
+		                      16,                          //
+		                      &colour);                    //
 	}
 }
 
@@ -157,7 +163,7 @@ Camera::debugScribbleSample(CameraSample &sample, bool fast)
 	}
 
 	xrt_frame *frame = NULL;
-	u_frame_create_one_off(XRT_FORMAT_R8G8B8X8, this->model.width, this->model.height, &frame);
+	u_frame_create_one_off(XRT_FORMAT_R8G8B8X8, this->model.width_true, this->model.height_true, &frame);
 	memset(frame->data, 0, frame->size);
 
 	{

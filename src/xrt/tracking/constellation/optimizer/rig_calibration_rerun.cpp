@@ -14,6 +14,8 @@
 
 #include "tracking/t_camera_models.hpp"
 
+#include "constellation/optimizer/internal_math.hpp"
+
 #include "util/u_logging.h"
 
 #include <cmath>
@@ -369,7 +371,8 @@ RerunContext::logKeyframeMetrics(const CalibrationResult &result, const Keyframe
 		std::string camera_metrics =
 		    getCameraMetricsEntityName(camera_sample.mosaic_idx, camera_sample.camera_idx);
 
-		const t_camera_model_params &dist = camera->params;
+		const t_camera_model_params &dist =
+		    kOptimizeUndistortedPoints ? camera->params.calib_pinhole : camera->params.calib_true;
 
 		float reprojection_error = reprojectionErrorPixels( //
 		    dist,                                           //

@@ -456,7 +456,8 @@ RerunContext::logObservations(const SolveSnapshot &snapshot)
 		const std::string camera_metrics =
 		    getCameraMetricsEntityName(observation.mosaic_idx, observation.camera_idx, device.id);
 
-		const t_camera_model_params &dist = observation.params;
+		const t_camera_model_params &dist =
+		    kOptimizeUndistortedPoints ? observation.params.calib_pinhole : observation.params.calib_true;
 
 		float reprojection_error = reprojectionErrorPixels( //
 		    dist,                                           //

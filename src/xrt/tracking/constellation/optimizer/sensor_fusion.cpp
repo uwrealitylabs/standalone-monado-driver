@@ -333,7 +333,7 @@ collectImuSamplesForRange(Device &device,
 
 struct StaticCameraObservationCostFunctor
 {
-	t_camera_model_params params;
+	camera_model params;
 	DeviceObservation observation;
 	Eigen::Transform<float, 3, Eigen::Isometry> Tcv_cam_world;
 
