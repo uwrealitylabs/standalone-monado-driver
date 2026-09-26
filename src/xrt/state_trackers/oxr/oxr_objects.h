@@ -146,21 +146,6 @@ extern "C" {
 	} while (false)
 
 
-static inline const char *
-xr_action_type_to_str(XrActionType type)
-{
-	// clang-format off
-		switch (type) {
-	#define PRINT(name, value) \
-		case name: return #name;
-		XR_LIST_ENUM_XrActionType(PRINT)
-	#undef PRINT
-		default: return "XR_ACTION_TYPE_UNKNOWN";
-		}
-	// clang-format on
-}
-
-
 /*!
  *
  * @name oxr_instance.c

@@ -204,6 +204,33 @@ xrt_form_factor_to_xr(enum xrt_form_factor form_factor)
  */
 
 static inline const char *
+xr_action_type_to_str(XrActionType type)
+{
+	// clang-format off
+	switch (type) {
+#define PRINT(name, value) \
+	case name: return #name;
+	XR_LIST_ENUM_XrActionType(PRINT)
+#undef PRINT
+	default: return "XR_ACTION_TYPE_UNKNOWN";
+	}
+	// clang-format on
+}
+
+static inline const char *
+xr_action_type_to_short_str(XrActionType type)
+{
+	switch (type) {
+	case XR_ACTION_TYPE_BOOLEAN_INPUT: return "BOOLEAN";
+	case XR_ACTION_TYPE_FLOAT_INPUT: return "FLOAT";
+	case XR_ACTION_TYPE_VECTOR2F_INPUT: return "VECTOR2";
+	case XR_ACTION_TYPE_POSE_INPUT: return "POSE";
+	case XR_ACTION_TYPE_VIBRATION_OUTPUT: return "VIBRATION";
+	default: return "UNKNOWN";
+	}
+}
+
+static inline const char *
 xrt_input_type_to_str(enum xrt_input_type type)
 {
 	// clang-format off
