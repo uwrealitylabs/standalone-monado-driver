@@ -30,6 +30,7 @@
 #include "util/u_time.h"
 #include "util/u_trace_marker.h"
 #include "util/u_var.h"
+#include "util/u_misc.h"
 
 #include "math/m_clock_tracking.h"
 #include "math/m_imu_3dof.h"
