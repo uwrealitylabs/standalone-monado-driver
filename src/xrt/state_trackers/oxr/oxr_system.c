@@ -9,14 +9,13 @@
  * @ingroup oxr_main
  */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <assert.h>
-
 #include "xrt/xrt_device.h"
+#include "xrt/xrt_app_policy.h"
+
 #include "util/u_debug.h"
 #include "util/u_verify.h"
+
+#include "math/m_api.h"
 
 #include "oxr_api_verify.h"
 #include "oxr_chain.h"
@@ -25,6 +24,11 @@
 #include "oxr_logger.h"
 #include "oxr_two_call.h"
 #include "oxr_roles.h"
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <assert.h>
 
 
 /*
@@ -36,6 +40,16 @@
 DEBUG_GET_ONCE_NUM_OPTION(scale_percentage, "OXR_VIEWPORT_SCALE_PERCENTAGE", 100)
 
 
+static double
+oxr_system_get_viewport_scale(struct oxr_logger *log)
+{
+	double scale = debug_get_num_option_scale_percentage() / 100.0;
+	if (scale > 2.0) {
+		scale = 2.0;
+		oxr_log(log, "Clamped scale to 200%%\n");
+	}
+	return scale;
+}
 
 static bool
 allowed_to_expose_quad_views(const struct oxr_system *sys)
@@ -110,31 +124,21 @@ fill_in_view_config_properties_views(struct oxr_logger *log,
 {
 	assert(view_config->view_count <= XRT_MAX_COMPOSITOR_VIEW_CONFIGS_VIEW_COUNT);
 
-	double scale = debug_get_num_option_scale_percentage() / 100.0;
-	if (scale > 2.0) {
-		scale = 2.0;
-		oxr_log(log, "Clamped scale to 200%%\n");
-	}
-
-#define imin(a, b) (a < b ? a : b)
 	for (uint32_t i = 0; i < view_config->view_count; ++i) {
-		uint32_t w = (uint32_t)(view_config->views[i].recommended.width_pixels * scale);
-		uint32_t h = (uint32_t)(view_config->views[i].recommended.height_pixels * scale);
-		uint32_t w_2 = view_config->views[i].max.width_pixels;
-		uint32_t h_2 = view_config->views[i].max.height_pixels;
+		uint32_t w_max = view_config->views[i].max.width_pixels;
+		uint32_t h_max = view_config->views[i].max.height_pixels;
 
-		w = imin(w, w_2);
-		h = imin(h, h_2);
+		uint32_t w = MIN(view_config->views[i].recommended.width_pixels, w_max);
+		uint32_t h = MIN(view_config->views[i].recommended.height_pixels, h_max);
 
 		xr_views[i].type = XR_TYPE_VIEW_CONFIGURATION_VIEW;
 		xr_views[i].recommendedImageRectWidth = w;
-		xr_views[i].maxImageRectWidth = w_2;
+		xr_views[i].maxImageRectWidth = w_max;
 		xr_views[i].recommendedImageRectHeight = h;
-		xr_views[i].maxImageRectHeight = h_2;
+		xr_views[i].maxImageRectHeight = h_max;
 		xr_views[i].recommendedSwapchainSampleCount = view_config->views[i].recommended.sample_count;
 		xr_views[i].maxSwapchainSampleCount = view_config->views[i].max.sample_count;
 	}
-#undef imin
 }
 
 static void
@@ -328,15 +332,71 @@ oxr_system_fill_in(
 			return oxr_error(log, XR_ERROR_RUNTIME_FAILURE, "Unexpected condition having no view configs");
 		}
 
+		double scale = oxr_system_get_viewport_scale(log);
+
 		// Cache these.
 		struct xrt_view_config view_configs[XRT_MAX_COMPOSITOR_VIEW_CONFIGS_COUNT];
 		for (uint32_t i = 0; i < info->view_type_count; i++) {
 			const enum xrt_view_type view_type = info->view_types[i];
+			struct xrt_view_config *view_config = &view_configs[i];
 
-			xret = xrt_syscomp_get_view_config(sys->xsysc, view_type, &view_configs[i]);
+			// Get the system's base view configuration
+			xret = xrt_syscomp_get_view_config(sys->xsysc, view_type, view_config);
 			if (xret != XRT_SUCCESS) {
 				return oxr_error(log, XR_ERROR_RUNTIME_FAILURE,
-				                 "Getting view configuration failed for an expected reason.");
+				                 "Getting view configuration failed for an unexpected reason.");
+			}
+
+			if (scale != 1.) {
+				struct xrt_recommended_view_config recommended_view_config = {
+				    .valid = true,
+				    .view_count = view_config->view_count,
+				};
+				for (uint32_t view = 0; view < view_config->view_count; view++) {
+					const struct xrt_view_config_properties *orig_props = &view_config->views[view];
+
+					recommended_view_config.views[view] = (struct xrt_recommended_view_config_view){
+					    .width_pixels =
+					        MIN((uint32_t)(orig_props->recommended.width_pixels * scale),
+					            orig_props->max.width_pixels),
+					    .height_pixels =
+					        MIN((uint32_t)(orig_props->recommended.height_pixels * scale),
+					            orig_props->max.height_pixels),
+					    .sample_count = orig_props->recommended.sample_count,
+					};
+				}
+
+				// Set our recommendation to what the user asked for in the env var
+				xret = xrt_app_system_set_recommended_view_configuration(sys->xasys, view_type,
+				                                                         &recommended_view_config);
+				if (xret != XRT_SUCCESS) {
+					return oxr_error(log, XR_ERROR_RUNTIME_FAILURE,
+					                 "Updating recommended view config from env var failed for an "
+					                 "unexpected reason.");
+				}
+			}
+
+			// Get the runtime's app-specific recommendation
+			struct xrt_recommended_view_config recommended_view_config;
+			xret = xrt_app_system_get_recommended_view_configuration(sys->xasys, view_type,
+			                                                         &recommended_view_config);
+			if (xret != XRT_SUCCESS) {
+				return oxr_error(log, XR_ERROR_RUNTIME_FAILURE,
+				                 "Getting recommended view config failed for an "
+				                 "unexpected reason.");
+			}
+
+			// Update our recommendations based on whatever default the runtime may have for our client
+			if (recommended_view_config.valid) {
+				assert(view_config->view_count == recommended_view_config.view_count);
+				for (uint32_t view = 0; view < view_config->view_count; view++) {
+					view_config->views[view].recommended.width_pixels =
+					    recommended_view_config.views[view].width_pixels;
+					view_config->views[view].recommended.height_pixels =
+					    recommended_view_config.views[view].height_pixels;
+					view_config->views[view].recommended.sample_count =
+					    recommended_view_config.views[view].sample_count;
+				}
 			}
 		}
 
