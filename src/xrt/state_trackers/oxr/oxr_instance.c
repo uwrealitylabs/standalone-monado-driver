@@ -106,11 +106,14 @@ oxr_instance_destroy(struct oxr_logger *log, struct oxr_handle_base *hb)
 
 	xrt_space_overseer_destroy(&inst->system.xso);
 	xrt_system_devices_destroy(&inst->system.xsysd);
+	xrt_app_system_destroy(&inst->system.xasys);
 	xrt_system_destroy(&inst->system.xsys);
 
 #ifdef XRT_FEATURE_CLIENT_DEBUG_GUI
 	u_debug_gui_stop(&inst->debug_ui);
 #endif
+
+	xrt_app_instance_destroy(&inst->xainst);
 
 	xrt_instance_destroy(&inst->xinst);
 
@@ -396,6 +399,13 @@ oxr_instance_create(struct oxr_logger *log,
 		return ret;
 	}
 
+	xret = xrt_instance_create_app_instance(inst->xinst, &inst->xainst);
+	if (xret != XRT_SUCCESS) {
+		ret = oxr_error(log, XR_ERROR_RUNTIME_UNAVAILABLE, "Failed to create instance '%i'", xret);
+		oxr_instance_destroy(log, &inst->handle.base);
+		return ret;
+	}
+
 #ifdef XRT_OS_ANDROID
 	xret = xrt_instance_android_register_activity_lifecycle_callback(
 	    inst->xinst->android_instance, on_activity_lifecycle_state_changed,
@@ -546,6 +556,16 @@ oxr_instance_init_system_locked(struct oxr_logger *log, struct oxr_instance *ins
 		struct u_pp_sink_stack_only sink;
 		u_pp_delegate_t dg = u_pp_sink_stack_only_init(&sink);
 		u_pp(dg, "Call to xrt_instance_create_system failed: ");
+		u_pp_xrt_result(dg, xret);
+		ret = oxr_error(log, XR_ERROR_INITIALIZATION_FAILED, "%s", sink.buffer);
+		return ret;
+	}
+
+	xret = xrt_app_instance_create_app_system(inst->xainst, sys->xsys, &sys->xasys);
+	if (xret != XRT_SUCCESS) {
+		struct u_pp_sink_stack_only sink;
+		u_pp_delegate_t dg = u_pp_sink_stack_only_init(&sink);
+		u_pp(dg, "Call to xrt_app_instance_create_app_system failed: ");
 		u_pp_xrt_result(dg, xret);
 		ret = oxr_error(log, XR_ERROR_INITIALIZATION_FAILED, "%s", sink.buffer);
 		return ret;

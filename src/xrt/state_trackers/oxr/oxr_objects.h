@@ -1059,6 +1059,9 @@ struct oxr_system
 	//! The @ref xrt_iface level system.
 	struct xrt_system *xsys;
 
+	//! The @ref xrt_iface level app system.
+	struct xrt_app_system *xasys;
+
 	//! System devices used in all session types.
 	struct xrt_system_devices *xsysd;
 
@@ -1149,7 +1152,11 @@ struct oxr_instance
 
 	struct u_debug_gui *debug_ui;
 
+	//! The @ref xrt_iface level instance.
 	struct xrt_instance *xinst;
+
+	//! The @ref xrt_iface level app instance.
+	struct xrt_app_instance *xainst;
 
 	//! Enabled extensions
 	struct oxr_extension_status extensions;
