@@ -288,12 +288,12 @@ oxr_event_push_XrEventDataMainSessionVisibilityChangedEXTX(struct oxr_logger *lo
 
 #ifdef OXR_HAVE_EXT_performance_settings
 XrResult
-oxr_event_push_XrEventDataPerfSettingsEXTX(struct oxr_logger *log,
-                                           struct oxr_session *sess,
-                                           enum xrt_perf_domain domain,
-                                           enum xrt_perf_sub_domain subDomain,
-                                           enum xrt_perf_notify_level fromLevel,
-                                           enum xrt_perf_notify_level toLevel)
+oxr_event_push_XrEventDataPerfSettingsEXT(struct oxr_logger *log,
+                                          struct oxr_session *sess,
+                                          enum xrt_perf_domain domain,
+                                          enum xrt_perf_sub_domain subDomain,
+                                          enum xrt_perf_notify_level fromLevel,
+                                          enum xrt_perf_notify_level toLevel)
 {
 	struct oxr_instance *inst = sess->sys->inst;
 	XrEventDataPerfSettingsEXT *changed;
@@ -313,6 +313,29 @@ oxr_event_push_XrEventDataPerfSettingsEXTX(struct oxr_logger *log,
 	return XR_SUCCESS;
 }
 #endif // OXR_HAVE_EXT_performance_settings
+
+#ifdef OXR_HAVE_EXT_view_configuration_views_change
+XrResult
+oxr_event_push_XrEventDataViewConfigurationViewsChangedEXT(struct oxr_logger *log,
+                                                           struct oxr_system *system,
+                                                           enum xrt_view_type viewConfigurationType)
+{
+	struct oxr_instance *inst = system->inst;
+	XrEventDataViewConfigurationViewsChangedEXT *changed;
+	struct oxr_event *event = NULL;
+
+	ALLOC(log, inst, &event, &changed);
+	changed->type = XR_TYPE_EVENT_DATA_VIEW_CONFIGURATION_VIEWS_CHANGED_EXT;
+	changed->systemId = system->systemId;
+	changed->viewConfigurationType = xrt_view_type_to_xr(viewConfigurationType);
+	event->result = XR_SUCCESS;
+	lock(inst);
+	push(inst, event);
+	unlock(inst);
+
+	return XR_SUCCESS;
+}
+#endif // OXR_HAVE_EXT_view_configuration_views_change
 
 #ifdef OXR_HAVE_FB_passthrough
 XrResult
@@ -429,6 +452,11 @@ oxr_poll_event(struct oxr_logger *log, struct oxr_instance *inst, XrEventDataBuf
 {
 	struct oxr_session *sess = inst->sessions;
 	XrResult ret;
+
+	ret = oxr_system_poll(log, &inst->system);
+	if (ret != XR_SUCCESS) {
+		return ret;
+	}
 
 	while (sess) {
 		ret = oxr_session_poll(log, sess);

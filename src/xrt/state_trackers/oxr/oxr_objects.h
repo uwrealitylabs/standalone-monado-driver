@@ -24,6 +24,7 @@
 #include "xrt/xrt_openxr_includes.h"
 #include "xrt/xrt_config_os.h"
 #include "xrt/xrt_config_have.h"
+#include "xrt/xrt_app_policy.h"
 
 #include "os/os_threading.h"
 
@@ -680,6 +681,9 @@ oxr_system_get_body_tracking_calibration_meta_support(struct oxr_logger *log, st
 bool
 oxr_system_get_body_tracking_fidelity_meta_support(struct oxr_logger *log, struct oxr_instance *inst);
 
+XRT_CHECK_RESULT XrResult
+oxr_system_poll(struct oxr_logger *log, struct oxr_system *sys);
+
 /*
  *
  * oxr_event.cpp
@@ -720,13 +724,21 @@ oxr_event_push_XrEventDataMainSessionVisibilityChangedEXTX(struct oxr_logger *lo
 
 #ifdef OXR_HAVE_EXT_performance_settings
 XrResult
-oxr_event_push_XrEventDataPerfSettingsEXTX(struct oxr_logger *log,
-                                           struct oxr_session *sess,
-                                           enum xrt_perf_domain domain,
-                                           enum xrt_perf_sub_domain subDomain,
-                                           enum xrt_perf_notify_level fromLevel,
-                                           enum xrt_perf_notify_level toLevel);
+oxr_event_push_XrEventDataPerfSettingsEXT(struct oxr_logger *log,
+                                          struct oxr_session *sess,
+                                          enum xrt_perf_domain domain,
+                                          enum xrt_perf_sub_domain subDomain,
+                                          enum xrt_perf_notify_level fromLevel,
+                                          enum xrt_perf_notify_level toLevel);
 #endif // OXR_HAVE_EXT_performance_settings
+
+#ifdef OXR_HAVE_EXT_view_configuration_views_change
+XrResult
+oxr_event_push_XrEventDataViewConfigurationViewsChangedEXT(struct oxr_logger *log,
+                                                           struct oxr_system *system,
+                                                           enum xrt_view_type viewConfigurationType);
+#endif // OXR_HAVE_EXT_view_configuration_views_change
+
 /*!
  * This clears all pending events refers to the given session.
  */
@@ -1076,8 +1088,12 @@ struct oxr_system
 	//! Have the client application called the gfx api requirements func?
 	bool gotten_requirements;
 
+	bool view_config_mutex_created;
+	struct os_mutex view_config_mutex;
 	uint32_t view_config_count;
 	struct oxr_view_config_properties view_configs[XRT_MAX_COMPOSITOR_VIEW_CONFIGS_COUNT];
+	bool pending_view_config_update[XRT_MAX_COMPOSITOR_VIEW_CONFIGS_COUNT];
+	timepoint_ns view_update_config_time[XRT_MAX_COMPOSITOR_VIEW_CONFIGS_COUNT];
 
 	XrReferenceSpaceType reference_spaces[5];
 	uint32_t reference_space_count;

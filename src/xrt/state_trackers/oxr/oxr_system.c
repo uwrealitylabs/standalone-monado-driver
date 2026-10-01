@@ -24,6 +24,7 @@
 #include "oxr_logger.h"
 #include "oxr_two_call.h"
 #include "oxr_roles.h"
+#include "oxr_xret.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -77,8 +78,9 @@ allowed_to_expose_quad_views(const struct oxr_system *sys)
 	return false;
 }
 
+//! Call with sys->view_config_mutex held
 static struct oxr_view_config_properties *
-get_view_config_properties(struct oxr_system *sys, XrViewConfigurationType view_config_type)
+get_view_config_properties_locked(struct oxr_system *sys, XrViewConfigurationType view_config_type)
 {
 	for (uint32_t i = 0; i < sys->view_config_count; i++) {
 		if (sys->view_configs[i].view_config_type == view_config_type) {
@@ -200,130 +202,10 @@ oxr_system_get_body_tracking_support(struct oxr_logger *log,
 	return false;
 }
 
-
-/*
- *
- * Two-call helpers.
- *
- */
-
-static void
-view_configuration_type_fill_in(XrViewConfigurationType *target, struct oxr_view_config_properties *source)
+static XrResult
+oxr_system_fill_view_configs_locked(struct oxr_logger *log, uint32_t view_count, struct oxr_system *sys)
 {
-	*target = source->view_config_type;
-}
-
-static void
-view_configuration_view_fill_in(XrViewConfigurationView *target_view, XrViewConfigurationView *source_view)
-{
-	// clang-format off
-	target_view->recommendedImageRectWidth       = source_view->recommendedImageRectWidth;
-	target_view->maxImageRectWidth               = source_view->maxImageRectWidth;
-	target_view->recommendedImageRectHeight      = source_view->recommendedImageRectHeight;
-	target_view->maxImageRectHeight              = source_view->maxImageRectHeight;
-	target_view->recommendedSwapchainSampleCount = source_view->recommendedSwapchainSampleCount;
-	target_view->maxSwapchainSampleCount         = source_view->maxSwapchainSampleCount;
-	// clang-format on
-}
-
-
-/*
- *
- * 'Exported' functions.
- *
- */
-
-XrResult
-oxr_system_select(struct oxr_logger *log,
-                  struct oxr_system **systems,
-                  uint32_t system_count,
-                  XrFormFactor form_factor,
-                  struct oxr_system **out_selected)
-{
-	if (system_count == 0) {
-		return oxr_error(log, XR_ERROR_FORM_FACTOR_UNSUPPORTED,
-		                 "(getInfo->formFactor) no system available (given: %i)", form_factor);
-	}
-
-	struct oxr_system *selected = NULL;
-	for (uint32_t i = 0; i < system_count; i++) {
-		if (oxr_system_matches(log, systems[i], form_factor)) {
-			selected = systems[i];
-			break;
-		}
-	}
-
-	if (selected == NULL) {
-		return oxr_error(log, XR_ERROR_FORM_FACTOR_UNSUPPORTED,
-		                 "(getInfo->formFactor) no matching system "
-		                 "(given: %i, first: %i)",
-		                 form_factor, xrt_form_factor_to_xr(systems[0]->xsys->properties.form_factor));
-	}
-
-	struct xrt_device *xdev = GET_STATIC_XDEV_BY_ROLE(selected, head);
-	if (xdev->supported.form_factor_check) {
-		bool available = false;
-		xrt_result_t xret =
-		    xrt_device_is_form_factor_available(xdev, xr_form_factor_to_xrt(form_factor), &available);
-		if (xret != XRT_SUCCESS) {
-			return oxr_error(log, XR_ERROR_RUNTIME_FAILURE,
-			                 "Call to xrt_device_is_form_factor_available failed: %s",
-			                 u_str_xrt_result(xret));
-		}
-		if (!available) {
-			return oxr_error(log, XR_ERROR_FORM_FACTOR_UNAVAILABLE,
-			                 "request form factor %i is unavailable now", form_factor);
-		}
-	}
-
-	*out_selected = selected;
-
-	return XR_SUCCESS;
-}
-
-XrResult
-oxr_system_verify_id(struct oxr_logger *log, const struct oxr_instance *inst, XrSystemId systemId)
-{
-	if (systemId != XRT_SYSTEM_ID) {
-		return oxr_error(log, XR_ERROR_SYSTEM_INVALID, "Invalid system %" PRIu64, systemId);
-	}
-	return XR_SUCCESS;
-}
-
-XrResult
-oxr_system_get_by_id(struct oxr_logger *log, struct oxr_instance *inst, XrSystemId systemId, struct oxr_system **system)
-{
-	XrResult result = oxr_system_verify_id(log, inst, systemId);
-	if (result != XR_SUCCESS) {
-		return result;
-	}
-
-	/* right now only have one system. */
-	*system = &inst->system;
-
-	return XR_SUCCESS;
-}
-
-XrResult
-oxr_system_fill_in(
-    struct oxr_logger *log, struct oxr_instance *inst, XrSystemId systemId, uint32_t view_count, struct oxr_system *sys)
-{
-	xrt_result_t xret = XRT_SUCCESS;
-
-	//! @todo handle other subaction paths?
-
-	sys->inst = inst;
-	sys->systemId = systemId;
-
-#ifdef XR_USE_GRAPHICS_API_VULKAN
-	sys->vulkan_enable2_instance = VK_NULL_HANDLE;
-	sys->suggested_vulkan_physical_device = VK_NULL_HANDLE;
-	sys->vk_get_instance_proc_addr = VK_NULL_HANDLE;
-#endif
-#if defined(XR_USE_GRAPHICS_API_D3D11) || defined(XR_USE_GRAPHICS_API_D3D12)
-	U_ZERO(&(sys->suggested_d3d_luid));
-	sys->suggested_d3d_luid_valid = false;
-#endif
+	xrt_result_t xret;
 
 	if (sys->xsysc != NULL) {
 		const struct xrt_system_compositor_info *info = &sys->xsysc->info;
@@ -362,7 +244,8 @@ oxr_system_fill_in(
 					    .height_pixels =
 					        MIN((uint32_t)(orig_props->recommended.height_pixels * scale),
 					            orig_props->max.height_pixels),
-					    .sample_count = orig_props->recommended.sample_count,
+					    .sample_count =
+					        MIN(orig_props->recommended.sample_count, orig_props->max.sample_count),
 					};
 				}
 
@@ -458,6 +341,276 @@ oxr_system_fill_in(
 		}
 	}
 
+	return XR_SUCCESS;
+}
+
+
+/*
+ *
+ * Two-call helpers.
+ *
+ */
+
+static void
+view_configuration_type_fill_in(XrViewConfigurationType *target, struct oxr_view_config_properties *source)
+{
+	*target = source->view_config_type;
+}
+
+static void
+view_configuration_view_fill_in(XrViewConfigurationView *target_view, XrViewConfigurationView *source_view)
+{
+	// clang-format off
+	target_view->recommendedImageRectWidth       = source_view->recommendedImageRectWidth;
+	target_view->maxImageRectWidth               = source_view->maxImageRectWidth;
+	target_view->recommendedImageRectHeight      = source_view->recommendedImageRectHeight;
+	target_view->maxImageRectHeight              = source_view->maxImageRectHeight;
+	target_view->recommendedSwapchainSampleCount = source_view->recommendedSwapchainSampleCount;
+	target_view->maxSwapchainSampleCount         = source_view->maxSwapchainSampleCount;
+	// clang-format on
+}
+
+static XrResult
+enumerate_view_confs_locked(struct oxr_logger *log,
+                            struct oxr_system *sys,
+                            uint32_t viewConfigurationTypeCapacityInput,
+                            uint32_t *viewConfigurationTypeCountOutput,
+                            XrViewConfigurationType *viewConfigurationTypes)
+{
+	OXR_TWO_CALL_FILL_IN_HELPER(log, viewConfigurationTypeCapacityInput, viewConfigurationTypeCountOutput,
+	                            viewConfigurationTypes, sys->view_config_count, view_configuration_type_fill_in,
+	                            sys->view_configs, XR_SUCCESS);
+}
+
+static XrResult
+enumerate_blend_modes_locked(struct oxr_logger *log,
+                             struct oxr_system *sys,
+                             XrViewConfigurationType viewConfigurationType,
+                             uint32_t environmentBlendModeCapacityInput,
+                             uint32_t *environmentBlendModeCountOutput,
+                             XrEnvironmentBlendMode *environmentBlendModes)
+{
+	struct oxr_view_config_properties *props = get_view_config_properties_locked(sys, viewConfigurationType);
+	if (props == NULL) {
+		return oxr_error(log, XR_ERROR_RUNTIME_FAILURE, "Didn't find view configs");
+	}
+
+	OXR_TWO_CALL_HELPER(log, environmentBlendModeCapacityInput, environmentBlendModeCountOutput,
+	                    environmentBlendModes, props->blend_mode_count, props->blend_modes, XR_SUCCESS);
+}
+
+static XrResult
+enumerate_view_conf_views_locked(struct oxr_logger *log,
+                                 struct oxr_system *sys,
+                                 XrViewConfigurationType viewConfigurationType,
+                                 uint32_t viewCapacityInput,
+                                 uint32_t *viewCountOutput,
+                                 XrViewConfigurationView *views)
+{
+	struct oxr_view_config_properties *props = get_view_config_properties_locked(sys, viewConfigurationType);
+	if (props == NULL) {
+		return oxr_error(log, XR_ERROR_RUNTIME_FAILURE, "Didn't find view configs");
+	}
+
+	OXR_TWO_CALL_FILL_IN_HELPER(log, viewCapacityInput, viewCountOutput, views, props->view_count,
+	                            view_configuration_view_fill_in, props->views, XR_SUCCESS);
+}
+
+XRT_CHECK_RESULT static XrResult
+oxr_system_push_pending_resolution_recommendation_events(struct oxr_logger *log,
+                                                         struct oxr_system *sys,
+                                                         struct oxr_session *sess)
+{
+#ifdef OXR_HAVE_EXT_view_configuration_views_change
+	xrt_result_t xret;
+
+	timepoint_ns now = os_monotonic_get_ns();
+	if (sys->xsysc != NULL && sys->inst->extensions.EXT_view_configuration_views_change) {
+		const struct xrt_system_compositor_info *info = &sys->xsysc->info;
+		if (info->view_type_count == 0) {
+			return oxr_error(log, XR_ERROR_RUNTIME_FAILURE, "Unexpected condition having no view configs");
+		}
+
+		// Cache these.
+		for (uint32_t i = 0; i < info->view_type_count; i++) {
+			const enum xrt_view_type view_type = info->view_types[i];
+
+			os_mutex_lock(&sys->view_config_mutex);
+			struct oxr_view_config_properties *props =
+			    get_view_config_properties_locked(sys, xrt_view_type_to_xr(view_type));
+
+			bool update = sys->pending_view_config_update[i] &&
+			              (now - sys->view_update_config_time[i]) > U_TIME_1S_IN_NS;
+
+			if (!props) {
+				os_mutex_unlock(&sys->view_config_mutex);
+				continue;
+			}
+
+			if (update) {
+				// Clear
+				sys->pending_view_config_update[i] = false;
+				sys->view_update_config_time[i] = now;
+				os_mutex_unlock(&sys->view_config_mutex); // unlock for IPC
+
+				struct xrt_view_config view_config;
+				xret = xrt_syscomp_get_view_config(sys->xsysc, view_type, &view_config);
+				OXR_CHECK_XRET(log, sess, xret, "xrt_syscomp_get_view_config");
+
+				struct xrt_recommended_view_config recommended;
+				xret = xrt_app_system_get_recommended_view_configuration(sys->xasys, view_type,
+				                                                         &recommended);
+				OXR_CHECK_XRET(log, sess, xret, "xrt_app_system_get_recommended_view_configuration");
+
+				// Pull the recommendation
+				if (recommended.valid) {
+					assert(recommended.view_count == view_config.view_count);
+
+					for (uint32_t view = 0; view < view_config.view_count; view++) {
+						view_config.views[view].recommended.width_pixels =
+						    recommended.views[view].width_pixels;
+						view_config.views[view].recommended.height_pixels =
+						    recommended.views[view].height_pixels;
+						view_config.views[view].recommended.sample_count =
+						    recommended.views[view].sample_count;
+					}
+				}
+
+				os_mutex_lock(&sys->view_config_mutex);
+				// Update our views with the lock
+				for (uint32_t view = 0; view < view_config.view_count; view++) {
+					XrViewConfigurationView *xr_view = &props->views[view];
+
+					xr_view->recommendedImageRectWidth =
+					    MIN(xr_view->maxImageRectWidth,
+					        view_config.views[view].recommended.width_pixels);
+					xr_view->recommendedImageRectHeight =
+					    MIN(xr_view->maxImageRectHeight,
+					        view_config.views[view].recommended.height_pixels);
+					xr_view->recommendedSwapchainSampleCount =
+					    MIN(xr_view->maxSwapchainSampleCount,
+					        view_config.views[view].recommended.sample_count);
+				}
+
+				oxr_event_push_XrEventDataViewConfigurationViewsChangedEXT(log, sys, view_type);
+			}
+			os_mutex_unlock(&sys->view_config_mutex);
+		}
+	}
+	return XR_SUCCESS;
+#else
+	(void)log;
+	(void)sys;
+	(void)sess;
+
+	return XR_SUCCESS;
+#endif // OXR_HAVE_EXT_view_configuration_views_change
+}
+
+
+/*
+ *
+ * 'Exported' functions.
+ *
+ */
+
+XrResult
+oxr_system_select(struct oxr_logger *log,
+                  struct oxr_system **systems,
+                  uint32_t system_count,
+                  XrFormFactor form_factor,
+                  struct oxr_system **out_selected)
+{
+	if (system_count == 0) {
+		return oxr_error(log, XR_ERROR_FORM_FACTOR_UNSUPPORTED,
+		                 "(getInfo->formFactor) no system available (given: %i)", form_factor);
+	}
+
+	struct oxr_system *selected = NULL;
+	for (uint32_t i = 0; i < system_count; i++) {
+		if (oxr_system_matches(log, systems[i], form_factor)) {
+			selected = systems[i];
+			break;
+		}
+	}
+
+	if (selected == NULL) {
+		return oxr_error(log, XR_ERROR_FORM_FACTOR_UNSUPPORTED,
+		                 "(getInfo->formFactor) no matching system "
+		                 "(given: %i, first: %i)",
+		                 form_factor, xrt_form_factor_to_xr(systems[0]->xsys->properties.form_factor));
+	}
+
+	struct xrt_device *xdev = GET_STATIC_XDEV_BY_ROLE(selected, head);
+	if (xdev->supported.form_factor_check) {
+		bool available = false;
+		xrt_result_t xret =
+		    xrt_device_is_form_factor_available(xdev, xr_form_factor_to_xrt(form_factor), &available);
+		if (xret != XRT_SUCCESS) {
+			return oxr_error(log, XR_ERROR_RUNTIME_FAILURE,
+			                 "Call to xrt_device_is_form_factor_available failed: %s",
+			                 u_str_xrt_result(xret));
+		}
+		if (!available) {
+			return oxr_error(log, XR_ERROR_FORM_FACTOR_UNAVAILABLE,
+			                 "request form factor %i is unavailable now", form_factor);
+		}
+	}
+
+	*out_selected = selected;
+
+	return XR_SUCCESS;
+}
+
+XrResult
+oxr_system_verify_id(struct oxr_logger *log, const struct oxr_instance *inst, XrSystemId systemId)
+{
+	if (systemId != XRT_SYSTEM_ID) {
+		return oxr_error(log, XR_ERROR_SYSTEM_INVALID, "Invalid system %" PRIu64, systemId);
+	}
+	return XR_SUCCESS;
+}
+
+XrResult
+oxr_system_get_by_id(struct oxr_logger *log, struct oxr_instance *inst, XrSystemId systemId, struct oxr_system **system)
+{
+	XrResult result = oxr_system_verify_id(log, inst, systemId);
+	if (result != XR_SUCCESS) {
+		return result;
+	}
+
+	/* right now only have one system. */
+	*system = &inst->system;
+
+	return XR_SUCCESS;
+}
+
+XrResult
+oxr_system_fill_in(
+    struct oxr_logger *log, struct oxr_instance *inst, XrSystemId systemId, uint32_t view_count, struct oxr_system *sys)
+{
+	//! @todo handle other subaction paths?
+
+	sys->inst = inst;
+	sys->systemId = systemId;
+
+#ifdef XR_USE_GRAPHICS_API_VULKAN
+	sys->vulkan_enable2_instance = VK_NULL_HANDLE;
+	sys->suggested_vulkan_physical_device = VK_NULL_HANDLE;
+	sys->vk_get_instance_proc_addr = VK_NULL_HANDLE;
+#endif
+#if defined(XR_USE_GRAPHICS_API_D3D11) || defined(XR_USE_GRAPHICS_API_D3D12)
+	U_ZERO(&(sys->suggested_d3d_luid));
+	sys->suggested_d3d_luid_valid = false;
+#endif
+
+	os_mutex_lock(&sys->view_config_mutex);
+	XrResult ret = oxr_system_fill_view_configs_locked(log, view_count, sys);
+	os_mutex_unlock(&sys->view_config_mutex);
+
+	if (ret != XR_SUCCESS) {
+		return ret;
+	}
 
 	/*
 	 * Reference space support.
@@ -931,9 +1084,12 @@ oxr_system_enumerate_view_confs(struct oxr_logger *log,
                                 uint32_t *viewConfigurationTypeCountOutput,
                                 XrViewConfigurationType *viewConfigurationTypes)
 {
-	OXR_TWO_CALL_FILL_IN_HELPER(log, viewConfigurationTypeCapacityInput, viewConfigurationTypeCountOutput,
-	                            viewConfigurationTypes, sys->view_config_count, view_configuration_type_fill_in,
-	                            sys->view_configs, XR_SUCCESS);
+	// Lock the mutex while we do this
+	os_mutex_lock(&sys->view_config_mutex);
+	XrResult result = enumerate_view_confs_locked(log, sys, viewConfigurationTypeCapacityInput,
+	                                              viewConfigurationTypeCountOutput, viewConfigurationTypes);
+	os_mutex_unlock(&sys->view_config_mutex);
+	return result;
 }
 
 XrResult
@@ -944,13 +1100,13 @@ oxr_system_enumerate_blend_modes(struct oxr_logger *log,
                                  uint32_t *environmentBlendModeCountOutput,
                                  XrEnvironmentBlendMode *environmentBlendModes)
 {
-	struct oxr_view_config_properties *props = get_view_config_properties(sys, viewConfigurationType);
-	if (props == NULL) {
-		return oxr_error(log, XR_ERROR_RUNTIME_FAILURE, "Didn't find view configs");
-	}
-
-	OXR_TWO_CALL_HELPER(log, environmentBlendModeCapacityInput, environmentBlendModeCountOutput,
-	                    environmentBlendModes, props->blend_mode_count, props->blend_modes, XR_SUCCESS);
+	// Lock the mutex while we do this
+	os_mutex_lock(&sys->view_config_mutex);
+	XrResult result =
+	    enumerate_blend_modes_locked(log, sys, viewConfigurationType, environmentBlendModeCapacityInput,
+	                                 environmentBlendModeCountOutput, environmentBlendModes);
+	os_mutex_unlock(&sys->view_config_mutex);
+	return result;
 }
 
 XrResult
@@ -959,13 +1115,16 @@ oxr_system_get_view_conf_properties(struct oxr_logger *log,
                                     XrViewConfigurationType viewConfigurationType,
                                     XrViewConfigurationProperties *configurationProperties)
 {
-	struct oxr_view_config_properties *props = get_view_config_properties(sys, viewConfigurationType);
+	os_mutex_lock(&sys->view_config_mutex);
+	struct oxr_view_config_properties *props = get_view_config_properties_locked(sys, viewConfigurationType);
 	if (props == NULL) {
+		os_mutex_unlock(&sys->view_config_mutex);
 		return oxr_error(log, XR_ERROR_RUNTIME_FAILURE, "Didn't find view configs");
 	}
 
 	configurationProperties->viewConfigurationType = props->view_config_type;
 	configurationProperties->fovMutable = sys->xsysc->info.supports_fov_mutable;
+	os_mutex_unlock(&sys->view_config_mutex);
 
 	return XR_SUCCESS;
 }
@@ -978,11 +1137,62 @@ oxr_system_enumerate_view_conf_views(struct oxr_logger *log,
                                      uint32_t *viewCountOutput,
                                      XrViewConfigurationView *views)
 {
-	struct oxr_view_config_properties *props = get_view_config_properties(sys, viewConfigurationType);
-	if (props == NULL) {
-		return oxr_error(log, XR_ERROR_RUNTIME_FAILURE, "Didn't find view configs");
+	os_mutex_lock(&sys->view_config_mutex);
+	XrResult result = enumerate_view_conf_views_locked(log, sys, viewConfigurationType, viewCapacityInput,
+	                                                   viewCountOutput, views);
+	os_mutex_unlock(&sys->view_config_mutex);
+	return result;
+}
+
+XRT_CHECK_RESULT XrResult
+oxr_system_poll(struct oxr_logger *log, struct oxr_system *sys)
+{
+	// @todo: OXR_CHECK_XRET expects a session, and we need to give it *something*,
+	//        give it the first (or none) for now.
+	struct oxr_session *sess = sys->inst->sessions;
+
+	// Do nothing until we have a system.
+	if (!sys->xasys) {
+		return XR_SUCCESS;
 	}
 
-	OXR_TWO_CALL_FILL_IN_HELPER(log, viewCapacityInput, viewCountOutput, views, props->view_count,
-	                            view_configuration_view_fill_in, props->views, XR_SUCCESS);
+	xrt_result_t xret;
+
+	bool read_more_events = true;
+	while (read_more_events) {
+		struct xrt_app_system_event xse = {0};
+		xret = xrt_app_system_poll_events(sys->xasys, &xse);
+		OXR_CHECK_XRET(log, sess, xret, "xrt_app_system_poll_events");
+
+		// dispatch based on event type
+		switch (xse.type) {
+		case XRT_APP_SYSTEM_EVENT_NONE:
+			// No more events.
+			read_more_events = false;
+			break;
+		case XRT_APP_SYSTEM_EVENT_RECOMMENDED_VIEW_CONFIGURATION_CHANGED:
+			if (sys->xsysc != NULL) {
+				const struct xrt_system_compositor_info *info = &sys->xsysc->info;
+
+				os_mutex_lock(&sys->view_config_mutex);
+				for (uint32_t i = 0; i < info->view_type_count; i++) {
+					if (info->view_types[i] ==
+					    xse.recommended_view_configuration_changed.view_type) {
+						sys->pending_view_config_update[i] = true;
+					}
+				}
+				os_mutex_unlock(&sys->view_config_mutex);
+			}
+
+			break;
+		}
+	}
+
+	// Check and push any pending resolution events.
+	XrResult ret = oxr_system_push_pending_resolution_recommendation_events(log, sys, sess);
+	if (ret != XR_SUCCESS) {
+		return ret;
+	}
+
+	return XR_SUCCESS;
 }

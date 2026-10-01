@@ -104,6 +104,10 @@ oxr_instance_destroy(struct oxr_logger *log, struct oxr_handle_base *hb)
 
 	os_mutex_destroy(&inst->system_init_lock);
 
+	if (inst->system.view_config_mutex_created) {
+		os_mutex_destroy(&inst->system.view_config_mutex);
+	}
+
 	xrt_space_overseer_destroy(&inst->system.xso);
 	xrt_system_devices_destroy(&inst->system.xsysd);
 	xrt_app_system_destroy(&inst->system.xasys);
@@ -350,6 +354,9 @@ oxr_instance_create(struct oxr_logger *log,
 #ifdef OXR_HAVE_EXT_hand_interaction
 	    .ext_hand_interaction_enabled = extensions->EXT_hand_interaction,
 #endif
+#ifdef OXR_HAVE_EXT_view_configuration_views_change
+	    .view_configuration_views_change_supported = extensions->EXT_view_configuration_views_change,
+#endif
 #ifdef OXR_HAVE_HTC_facial_tracking
 	    .htc_facial_tracking_enabled = extensions->HTC_facial_tracking,
 #endif
@@ -560,6 +567,13 @@ oxr_instance_init_system_locked(struct oxr_logger *log, struct oxr_instance *ins
 		ret = oxr_error(log, XR_ERROR_INITIALIZATION_FAILED, "%s", sink.buffer);
 		return ret;
 	}
+
+	int iret = os_mutex_init(&sys->view_config_mutex);
+	if (iret < 0) {
+		ret = oxr_error(log, XR_ERROR_RUNTIME_FAILURE, "Call to os_mutex_init failed: %d", iret);
+		return ret;
+	}
+	sys->view_config_mutex_created = true;
 
 	xret = xrt_app_instance_create_app_system(inst->xainst, sys->xsys, &sys->xasys);
 	if (xret != XRT_SUCCESS) {

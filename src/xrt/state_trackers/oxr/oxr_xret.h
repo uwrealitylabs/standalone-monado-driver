@@ -17,12 +17,14 @@
  * Helper define to check results from 'xrt_` functions (@ref xrt_result_t) and
  * also set any needed state.
  *
+ * @todo We probably want to invalidate all sessions, not the current.
+ *
  * @ingroup oxr_main
  */
 #define OXR_CHECK_XRET(LOG, SESS, RESULTS, FUNCTION)                                                                   \
 	do {                                                                                                           \
 		xrt_result_t check_ret = (RESULTS);                                                                    \
-		if (check_ret == XRT_ERROR_IPC_FAILURE) {                                                              \
+		if (check_ret == XRT_ERROR_IPC_FAILURE && (SESS)) {                                                    \
 			(SESS)->has_lost = true;                                                                       \
 			return oxr_error((LOG), XR_ERROR_INSTANCE_LOST, "Call to " #FUNCTION " failed");               \
 		}                                                                                                      \
