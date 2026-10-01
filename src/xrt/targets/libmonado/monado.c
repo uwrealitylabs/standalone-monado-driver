@@ -554,6 +554,7 @@ mnd_root_set_client_recommended_view_config(mnd_root_t *root,
 
 	struct xrt_recommended_view_config xrt_view_config = {
 	    .view_count = view_count,
+	    .valid = recommended_view_config->valid,
 	};
 	for (uint32_t i = 0; i < view_count; i++) {
 		xrt_view_config.views[i].width_pixels = recommended_view_config->view_configs[i].width_pixels;
