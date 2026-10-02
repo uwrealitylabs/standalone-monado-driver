@@ -235,7 +235,7 @@ send_device_inputs(volatile struct ipc_client_state *ics, struct xrt_device *xde
 		IPC_CHK_ALWAYS_RET(ics->server, xret, "ipc_send(inputs)");
 	}
 
-	struct xrt_input filtered[1024];
+	struct xrt_input filtered[1024] = {0};
 	if (ARRAY_SIZE(filtered) < xdev->input_count) {
 		return XRT_ERROR_IPC_FAILURE;
 	}
@@ -247,7 +247,7 @@ send_device_inputs(volatile struct ipc_client_state *ics, struct xrt_device *xde
 		bool blocked = false;
 		switch (XRT_GET_INPUT_TYPE(src->name)) {
 		case XRT_INPUT_TYPE_POSE: //
-			blocked = iob->block_poses && dst->name != XRT_INPUT_GENERIC_HEAD_POSE;
+			blocked = iob->block_poses && src->name != XRT_INPUT_GENERIC_HEAD_POSE;
 			break;
 		case XRT_INPUT_TYPE_HAND_TRACKING: //
 			blocked = iob->block_hand_tracking;
