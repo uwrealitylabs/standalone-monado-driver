@@ -168,38 +168,35 @@ project_led_points(struct t_constellation_tracker_led_model *led_model,
 	return true;
 }
 
-static void
-get_visible_leds_and_bounds(const struct xrt_pose *T_cam_obj,
-                            struct t_constellation_tracker_led_model *led_model,
-                            struct camera_model *calib,
-                            struct pose_metrics_visible_led_info *visible_led_points,
-                            int *num_visible_leds,
-                            struct pose_rect *bounds)
+static bool
+get_visible_leds(const struct xrt_pose *T_cam_obj,
+                 struct t_constellation_tracker_led_model *led_model,
+                 struct camera_model *calib,
+                 struct pose_metrics_visible_led_info *visible_led_points,
+                 int *num_visible_leds)
 {
-	struct xrt_vec3 led_out_positions[MAX_OBJECT_LEDS];
-	struct xrt_vec2 led_out_points[MAX_OBJECT_LEDS];
-	bool first_visible_led = true;
-	struct t_constellation_tracker_led *leds = led_model->leds;
-	const int num_leds = led_model->led_count;
+	*num_visible_leds = 0;
+
+	struct xrt_vec3 led_out_positions[MAX_OBJECT_LEDS] = {0};
+	struct xrt_vec2 led_out_points[MAX_OBJECT_LEDS] = {0};
 
 	// Project LEDs into the distorted image space
 	if (!project_led_points(led_model, calib, T_cam_obj, led_out_positions, led_out_points)) {
-		*num_visible_leds = 0;
-		return;
+		return false;
 	}
 
 	// Compute LED pixel size based on model distance below using the larger X/Y focal length and LED's Z value
-	double focal_length = MAX(calib->calib.fx, calib->calib.fy);
+	const double focal_length = MAX(calib->calib.fx, calib->calib.fy);
 
-	struct xrt_pose T_obj_cam;
+	struct xrt_pose T_obj_cam = {0};
 	math_pose_invert(T_cam_obj, &T_obj_cam);
 
-	// Calculate the bounding box and visible LEDs
-	*num_visible_leds = 0;
+	struct t_constellation_tracker_led *leds = led_model->leds;
+	const int num_leds = led_model->led_count;
 
 	for (int i = 0; i < num_leds; i++) {
-		struct xrt_vec2 *led_pos_px = led_out_points + i;
-		struct xrt_vec3 *led_pos_m = led_out_positions + i;
+		struct xrt_vec2 *led_pos_px = &led_out_points[i];
+		struct xrt_vec3 *led_pos_m = &led_out_positions[i];
 		struct t_constellation_tracker_led *led = &leds[i];
 
 		// LEDs behind the camera are not visible
@@ -244,37 +241,51 @@ get_visible_leds_and_bounds(const struct xrt_pose *T_cam_obj,
 			continue;
 		}
 
-		struct pose_metrics_visible_led_info *led_info = visible_led_points + (*num_visible_leds);
+		struct pose_metrics_visible_led_info *led_info = &visible_led_points[(*num_visible_leds)++];
 		led_info->led = leds + i;
 		led_info->pos_px = *led_pos_px;
 		led_info->pos_m = *led_pos_m;
 		led_info->led_radius_px = led_radius_px;
 		led_info->matched_blob = NULL;
 		led_info->facing_dot = facing_dot;
-		++(*num_visible_leds);
-
-		// Expand the bounding box
-		if (first_visible_led) {
-			(*bounds) = (struct pose_rect){
-			    .left = led_pos_px->x - led_radius_px,
-			    .top = led_pos_px->y - led_radius_px,
-			    .right = led_pos_px->x + 2 * led_radius_px,
-			    .bottom = led_pos_px->y + 2 * led_radius_px,
-			};
-
-			first_visible_led = false;
-		} else {
-			expand_rect(bounds, led_pos_px->x - led_radius_px, led_pos_px->y - led_radius_px,
-			            2 * led_radius_px, 2 * led_radius_px);
-		}
 	}
+
+	return true;
+}
+
+static bool
+get_visible_leds_bounds(struct pose_metrics_visible_led_info *visible_led_points,
+                        int num_visible_leds,
+                        struct pose_rect *bounds)
+{
+	if (num_visible_leds == 0) {
+		return false;
+	}
+
+	const struct pose_metrics_visible_led_info *led_info = &visible_led_points[0];
+	(*bounds) = (struct pose_rect){
+	    .left = led_info->pos_px.x - led_info->led_radius_px,
+	    .top = led_info->pos_px.y - led_info->led_radius_px,
+	    .right = led_info->pos_px.x + 2 * led_info->led_radius_px,
+	    .bottom = led_info->pos_px.y + 2 * led_info->led_radius_px,
+	};
+
+	for (int i = 1; i < num_visible_leds; ++i) {
+		const struct pose_metrics_visible_led_info *led_info = &visible_led_points[i];
+
+		expand_rect(bounds, led_info->pos_px.x - led_info->led_radius_px,
+		            led_info->pos_px.y - led_info->led_radius_px, 2 * led_info->led_radius_px,
+		            2 * led_info->led_radius_px);
+	}
+
+	return true;
 }
 
 /*
  * Exported functions.
  */
 
-void
+bool
 pose_metrics_match_pose_to_blobs(const struct xrt_pose *pose,
                                  struct t_blob *blobs,
                                  int num_blobs,
@@ -283,23 +294,30 @@ pose_metrics_match_pose_to_blobs(const struct xrt_pose *pose,
                                  struct camera_model *calib,
                                  struct pose_metrics_blob_match_info *match_info)
 {
-	struct pose_rect *bounds = &match_info->bounds;
 
 	match_info->reprojection_error = 0.0;
 	match_info->matched_blobs = 0;
 	match_info->unmatched_blobs = 0;
 	match_info->degenerate_solution = false;
 
-	get_visible_leds_and_bounds(pose, led_model, calib, match_info->visible_leds, &match_info->num_visible_leds,
-	                            &match_info->bounds);
+	if (!get_visible_leds(pose, led_model, calib, match_info->visible_leds, &match_info->num_visible_leds)) {
+		U_LOG_W("No visible leds found");
+		return false;
+	}
 
+	if (!get_visible_leds_bounds(match_info->visible_leds, match_info->num_visible_leds, &match_info->bounds)) {
+		U_LOG_E("Failed to get leds bounds");
+		return false;
+	}
+
+	const struct pose_rect *bounds = &match_info->bounds;
 	LOG_SPEW("Bounding box for pose is %f,%f -> %f,%f", bounds->left, bounds->top, bounds->right, bounds->bottom);
 
 	// Iterate the blobs and see which ones are within the bounding box and have a matching LED
 	bool all_led_ids_matched = true;
 
 	for (int i = 0; i < num_blobs; i++) {
-		struct t_blob *b = blobs + i;
+		struct t_blob *b = &blobs[i];
 		t_constellation_device_id_t led_object_id = b->matched_device_id;
 
 		// Skip blobs which already have an ID not belonging to this device
@@ -313,8 +331,7 @@ pose_metrics_match_pose_to_blobs(const struct xrt_pose *pose,
 			continue;
 		}
 
-		double sqerror;
-
+		double sqerror = 0.f;
 		int match_led_index = find_best_matching_led(match_info->visible_leds,     //
 		                                             match_info->num_visible_leds, //
 		                                             b,                            //
@@ -349,9 +366,11 @@ pose_metrics_match_pose_to_blobs(const struct xrt_pose *pose,
 	if (match_info->matched_blobs <= 3) {
 		match_info->degenerate_solution = true;
 	}
+
+	return true;
 }
 
-void
+bool
 pose_metrics_evaluate_pose(struct pose_metrics *score,
                            const struct xrt_pose *pose,
                            struct t_blob *blobs,
@@ -361,11 +380,11 @@ pose_metrics_evaluate_pose(struct pose_metrics *score,
                            struct camera_model *calib,
                            struct pose_rect *out_bounds)
 {
-	pose_metrics_evaluate_pose_with_prior(score, pose, false, NULL, NULL, NULL, blobs, num_blobs, led_model,
-	                                      device_id, calib, out_bounds);
+	return pose_metrics_evaluate_pose_with_prior(score, pose, false, NULL, NULL, NULL, blobs, num_blobs, led_model,
+	                                             device_id, calib, out_bounds);
 }
 
-void
+bool
 pose_metrics_evaluate_pose_with_prior(struct pose_metrics *score,
                                       const struct xrt_pose *pose,
                                       bool prior_must_match,
@@ -385,9 +404,11 @@ pose_metrics_evaluate_pose_with_prior(struct pose_metrics *score,
 	 * 3. For blobs within the bounding box, see if they match a LED
 	 * 4. Count up the matched LED<->Blob correspondences, and the reprojection error
 	 */
-	struct pose_metrics_blob_match_info blob_match_info;
+	struct pose_metrics_blob_match_info blob_match_info = {0};
 
-	pose_metrics_match_pose_to_blobs(pose, blobs, num_blobs, led_model, device_id, calib, &blob_match_info);
+	if (!pose_metrics_match_pose_to_blobs(pose, blobs, num_blobs, led_model, device_id, calib, &blob_match_info)) {
+		return false;
+	}
 
 	assert(led_model->led_count > 0);
 	assert(num_blobs > 0);
@@ -496,6 +517,8 @@ done:
 	if (out_bounds) {
 		*out_bounds = blob_match_info.bounds;
 	}
+
+	return true;
 }
 
 bool

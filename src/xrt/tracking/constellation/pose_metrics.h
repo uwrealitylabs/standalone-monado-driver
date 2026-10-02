@@ -116,7 +116,7 @@ struct pose_metrics_blob_match_info
 	bool degenerate_solution;
 };
 
-void
+bool
 pose_metrics_match_pose_to_blobs(const struct xrt_pose *pose,
                                  struct t_blob *blobs,
                                  int num_blobs,
@@ -125,7 +125,7 @@ pose_metrics_match_pose_to_blobs(const struct xrt_pose *pose,
                                  struct camera_model *calib,
                                  struct pose_metrics_blob_match_info *match_info);
 
-void
+bool
 pose_metrics_evaluate_pose(struct pose_metrics *score,
                            const struct xrt_pose *pose,
                            struct t_blob *blobs,
@@ -135,7 +135,7 @@ pose_metrics_evaluate_pose(struct pose_metrics *score,
                            struct camera_model *calib,
                            struct pose_rect *out_bounds);
 
-void
+bool
 pose_metrics_evaluate_pose_with_prior(struct pose_metrics *score,
                                       const struct xrt_pose *pose,
                                       bool prior_must_match,
