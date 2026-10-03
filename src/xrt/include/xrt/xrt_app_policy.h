@@ -153,8 +153,6 @@ struct xrt_app_system
 	 * Gets the recommended view configuration for the given view type, if available and supported.
 	 * Only the `recommended` field is guaranteed to be provided, and `max` may be left unspecified.
 	 *
-	 * This allows a policy to set a new recommended view configuration for the lifetime of this application.
-	 *
 	 * @param      xasys                       Pointer to self
 	 * @param      view_type                   The view type to get the recommended view configuration for.
 	 * @param[out] out_recommended_view_config The recommendation for the client.
@@ -165,11 +163,7 @@ struct xrt_app_system
 	    struct xrt_recommended_view_config *out_recommended_view_config);
 
 	/*!
-	 * Sets the recommended view configuration for the given view type.
-	 * Only the `recommended` field will be meaningfully read by the xrt_app_system.
-	 *
-	 * The callee should push a session event of type @ref XRT_SESSION_EVENT_RECOMMENDED_VIEW_CONFIGURATION_CHANGE
-	 * when the recommended view configuration changes, so that sessions can react to this change if they want to.
+	 * Sets the recommended view configuration for this application, for the given view type.
 	 *
 	 * @note The xrt_app_system may not do verification on the passed configuration, it is up to the callee to not
 	 *       pass invalid data into here.
