@@ -524,11 +524,12 @@ Camera::tryDeviceBlobRecovery(Device *device,
 	 *       I don't think this will make things *worse*, but it seems to at least get some more valid solves
 	 *       through, so this is fine for now, set as a constexpr bool for easy tweaking purposes.
 	 *       Since a RANSAC has already made an assessment over the validity of the pose, and we already trust that
-	 *       assessment, this shouldn't cause many problems.
+	 *       assessment, this shouldn't cause many problems. RANSAC is also only meaningful if more than 4 blobs
+	 *       were matched in the RANSAC run, otherwise RANSAC did not even run.
 	 */
 	constexpr bool kAlwaysTrustRansac = true;
 
-	if (kAlwaysTrustRansac || POSE_HAS_FLAGS(&score, POSE_MATCH_GOOD)) {
+	if ((kAlwaysTrustRansac && score.matched_blobs > 4) || POSE_HAS_FLAGS(&score, POSE_MATCH_GOOD)) {
 		CT_DEBUG(tracker, "Camera %p RANSAC-PnP recovered pose was good enough for device %d from %u blobs",
 		         (void *)this, device->id, sample.blob_count);
 
@@ -805,9 +806,11 @@ Camera::processSampleFast(CameraSample &sample)
 			math_space_relation_convert_from_opencv(&device_predicted_relation,
 			                                        &Tcv_world_device_predicted);
 
-			Tcv_cam_device_predicted.emplace(xrt_space_relation{}); // initialize it to a value
+			Tcv_cam_device_predicted.emplace(Tcv_world_device_predicted); // initialize it to a value
 			math_pose_transform(&Tcv_cam_world.value(), &Tcv_world_device_predicted.pose,
 			                    &Tcv_cam_device_predicted.value().pose);
+			// @note technically we need to transform the velocities here but we aren't actually reading the
+			//       values, just the magnitude rn so its fine.
 		}
 
 		auto &device_state = sample.putDeviceState(device->id);
@@ -841,16 +844,16 @@ Camera::processSampleFast(CameraSample &sample)
 			// to keep sane blob associations.
 			if (m_vec3_len(Tcv_cam_device_predicted->linear_velocity) > 5 ||
 			    m_vec3_len(Tcv_cam_device_predicted->angular_velocity) > (M_PI * 2)) {
-				do_blob_recovery = true;
+				do_blob_recovery = false;
 			}
 		}
 
 		// if we have a valid prior pose, try to use it for fast matching
-		if (Tcv_cam_device_predicted.has_value() &&       //
-		    this->tryDevicePose(device,                   //
-		                        sample,                   //
-		                        device_state,             //
-		                        Tcv_cam_device_predicted, //
+		if (Tcv_cam_device_predicted.has_value() && //
+		    this->tryDevicePose(device,             //
+		                        sample,             //
+		                        device_state,       //
+		                        std::nullopt,       //
 		                        Tcv_cam_device_predicted.value().pose)) {
 			CT_DEBUG(tracker, "Fast processing for device %d succeeded with predicted pose", device->id);
 			continue; // try the next device, we found a pose!
@@ -1000,6 +1003,20 @@ Camera::pushPose(CameraSample &camera_sample,
 			         Tcv_cam_device.position.z);
 
 			Tcv_cam_device = Tcv_cam_device_optimized;
+
+			// Now that we've optimized the pose, we gotta update the match info
+			pose_metrics_match_pose_to_blobs(&Tcv_cam_device, camera_sample.blobs, camera_sample.blob_count,
+			                                 &device->params.led_model, device->id, &this->model,
+			                                 &blob_match_info);
+
+			// Unmark any other blobs
+			camera_sample.markMatchingBlobs(tracker, device->params.led_model, device->id, blob_match_info);
+		}
+
+		// If after RANSAC and optimization no blobs remain, skip, so that we aren't putting an invalid pose
+		// into the fusion/latest field.
+		if (num_blobs_for_device(camera_sample, device->id) == 0) {
+			return;
 		}
 
 		// We need to re-evaluate the pose after optimization, since the reprojection error may have changed.
