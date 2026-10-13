@@ -56,7 +56,7 @@ oxr_suggested_profile_clone(const struct oxr_suggested_profile *src_profile)
 		       sizeof(struct oxr_suggested_binding) * src_profile->binding_count);
 	}
 
-	if (src_profile->dpad_state.uhi != NULL &&
+	if (src_profile->dpad_state.entries != NULL &&
 	    !oxr_dpad_state_clone(&dst_profile->dpad_state, &src_profile->dpad_state)) {
 		oxr_suggested_profile_destroy(dst_profile);
 		return NULL;
