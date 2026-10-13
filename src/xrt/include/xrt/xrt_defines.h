@@ -950,6 +950,8 @@ enum xrt_input_type
 enum xrt_input_name
 {
 	// clang-format off
+	//! Not a real input. Sentinel for "no input", distinct from any XRT_INPUT_NAME value.
+	XRT_INPUT_NAME_INVALID                                      = 0,
 	//! Standard pose used for rendering
 	XRT_INPUT_GENERIC_HEAD_POSE                                 = XRT_INPUT_NAME(0x0000, POSE),
 	XRT_INPUT_GENERIC_HEAD_DETECT                               = XRT_INPUT_NAME(0x0001, BOOLEAN),
@@ -1632,6 +1634,9 @@ enum xrt_output_type
 enum xrt_output_name
 {
 	// clang-format off
+	//! Not a real output. Sentinel for "no output", distinct from any XRT_OUTPUT_NAME value.
+	XRT_OUTPUT_NAME_INVALID                                     = 0,
+	// Named outputs. Each value is XRT_OUTPUT_NAME(id, type), so none of these are 0.
 	XRT_OUTPUT_NAME_SIMPLE_VIBRATION                            = XRT_OUTPUT_NAME(0x0010, VIBRATION),
 	XRT_OUTPUT_NAME_PSMV_RUMBLE_VIBRATION                       = XRT_OUTPUT_NAME(0x0020, VIBRATION),
 	XRT_OUTPUT_NAME_INDEX_HAPTIC                                = XRT_OUTPUT_NAME(0x0030, VIBRATION),
