@@ -19,6 +19,7 @@
 #include "shared/ipc_shmem.h"
 #include "shared/ipc_utils.h"
 #include "server/ipc_server.h"
+#include "server/ipc_server_thread_shutdown.h"
 #include "ipc_server_generated.h"
 
 #ifndef XRT_OS_WINDOWS
@@ -260,8 +261,8 @@ client_loop(volatile struct ipc_client_state *ics)
 	}
 
 	struct ipc_thread *it = &ics->server->threads[ics->server_thread_index];
-	it->state = IPC_THREAD_RUNNING;
-	while (it->state == IPC_THREAD_RUNNING) {
+	ipc_server_client_thread_set_running(ics->server, it);
+	while (ipc_server_client_thread_is_running(ics->server, it)) {
 		const int half_a_second_ms = 500;
 		struct epoll_event event = XRT_STRUCT_INIT;
 		int ret = 0;
@@ -367,8 +368,8 @@ client_loop(volatile struct ipc_client_state *ics)
 	    ics->server->callback_data);          //
 
 	struct ipc_thread *it = &ics->server->threads[ics->server_thread_index];
-	it->state = IPC_THREAD_RUNNING;
-	while (it->state == IPC_THREAD_RUNNING) {
+	ipc_server_client_thread_set_running(ics->server, it);
+	while (ipc_server_client_thread_is_running(ics->server, it)) {
 		uint8_t buf[IPC_BUF_SIZE] = {0};
 		DWORD len = 0;
 		BOOL bret = false;

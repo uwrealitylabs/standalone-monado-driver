@@ -55,6 +55,9 @@ endif()
 if(XRT_BUILD_DRIVER_HANDTRACKING)
 	list(APPEND tests tests_levenbergmarquardt)
 endif()
+if(TARGET ipc_server)
+	list(APPEND tests tests_ipc_thread_shutdown)
+endif()
 
 foreach(testname ${tests})
 	add_executable(${testname} ${testname}.cpp)
@@ -142,4 +145,13 @@ endif()
 
 if(XRT_HAVE_VULKAN AND XRT_HAVE_D3D12)
 	target_link_libraries(tests_aux_d3d_d3d12 PRIVATE comp_util aux_vk)
+endif()
+
+if(TARGET ipc_server)
+	target_sources(
+		tests_ipc_thread_shutdown
+		PRIVATE ../src/xrt/ipc/server/ipc_server_thread_shutdown.c
+		)
+	target_link_libraries(tests_ipc_thread_shutdown PRIVATE ipc_shared aux_os base)
+	set_tests_properties(tests_ipc_thread_shutdown PROPERTIES TIMEOUT 10)
 endif()
