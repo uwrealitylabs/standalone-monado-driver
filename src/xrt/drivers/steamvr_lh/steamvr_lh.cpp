@@ -304,7 +304,7 @@ Context::setup_hmd(const char *serial, vr::ITrackedDeviceServerDriver *driver)
 	}
 
 	u_var_add_root(hmd, "SteamVR HMD Device", true);
-	u_var_add_f32(hmd, &hmd->ipd, "IPD");
+	u_var_add_f32(hmd, &hmd->lh_ipd, "Lighthouse IPD");
 
 	u_var_add_f32(hmd, &distortion.fov[0].angle_up, "View 0 FovAngleUp");
 	u_var_add_f32(hmd, &distortion.fov[0].angle_down, "View 0 FovAngleDown");
