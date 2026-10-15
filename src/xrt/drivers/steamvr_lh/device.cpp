@@ -14,6 +14,8 @@
 #include "math/m_relation_history.h"
 #include "math/m_space.h"
 
+#include "os/os_time.h"
+
 #include "interfaces/context.hpp"
 
 #include "util/u_debug.h"
@@ -217,13 +219,6 @@ const std::unordered_map<std::string_view, InputClass> controller_classes{
         },
     },
 };
-int64_t
-chrono_timestamp_ns()
-{
-	auto now = std::chrono::steady_clock::now().time_since_epoch();
-	int64_t ts = std::chrono::duration_cast<std::chrono::nanoseconds>(now).count();
-	return ts;
-}
 
 // Template for calling a member function of Device from a free function
 template <typename DeviceType, auto Func, typename Ret, typename... Args>
@@ -1203,7 +1198,7 @@ Device::update_pose(const vr::DriverPose_t &newPose) const
 	math_quat_rotate_vec3(&chaperone.orientation, &relation.linear_velocity, &relation.linear_velocity);
 	math_quat_rotate_vec3(&chaperone.orientation, &relation.angular_velocity, &relation.angular_velocity);
 
-	const int64_t ts = chrono_timestamp_ns() + time_s_to_ns(newPose.poseTimeOffset);
+	const int64_t ts = os_monotonic_get_ns() + time_s_to_ns(newPose.poseTimeOffset);
 
 	m_relation_history_push(relation_hist, &relation, ts);
 }
