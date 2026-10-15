@@ -418,7 +418,7 @@ receive_cam_frame(struct xrt_frame_sink *sink, struct xrt_frame *xf)
 		//! @todo Update expgain independently for each camera like in WMR
 		update_expgain(cam, frames[0]);
 
-		uint64_t frame_ts_ns = (uint64_t)__le64_to_cpu(row_data.data.frame_ts) * OS_NS_PER_USEC;
+		uint64_t frame_ts_ns = (uint64_t)__le64_to_cpu(row_data.data.frame_ts) * U_TIME_1US_IN_NS;
 		rift_s_tracker_push_slam_frames(cam->tracker, frame_ts_ns, frames);
 
 		for (int i = 0; i < RIFT_S_CAMERA_COUNT; i++) {

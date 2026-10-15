@@ -13,6 +13,7 @@
 
 #include "util/u_debug.h"
 #include "util/u_frameserver.h"
+#include "util/u_time.h"
 
 #include "math/m_api.h"
 
@@ -349,7 +350,7 @@ iso_transfer_cb(struct libusb_transfer *transfer)
 		}
 
 		// sleep 500us between retries
-		os_nanosleep(OS_NS_PER_USEC * 500);
+		os_nanosleep(U_TIME_1US_IN_NS * 500);
 	}
 
 	if (ret < 0) {
