@@ -7,8 +7,12 @@
  * @ingroup drv_vp2
  */
 
+#include "xrt/xrt_byte_order.h"
+#include "xrt/xrt_compiler.h"
+
 #include "os/os_hid.h"
 #include "os/os_time.h"
+#include "os/os_threading.h"
 
 #include "util/u_logging.h"
 #include "util/u_debug.h"
@@ -16,8 +20,6 @@
 #include "util/u_file.h"
 
 #include "math/m_api.h"
-
-#include "xrt/xrt_byte_order.h"
 
 #include "vp2_hid.h"
 #include "vp2_config.h"
@@ -48,6 +50,10 @@ struct vp2_hid
 	float brightness;
 
 	char serial[64];
+
+	struct os_thread_helper thread;
+	timepoint_ns last_status_report_ns;
+	xrt_atomic_s64_t status;
 };
 
 #define VP2_DATA_SIZE 64
@@ -63,6 +69,12 @@ struct vp2_feature_header
 };
 
 #pragma pack(pop)
+
+/*
+ *
+ * Helper functions
+ *
+ */
 
 static int
 vp2_write(struct vp2_hid *vp2, uint8_t id, const uint8_t *data, size_t size)
@@ -98,7 +110,7 @@ vp2_write_feature(struct vp2_hid *vp2, uint8_t id, uint16_t sub_id, const uint8_
 	return os_hid_set_feature(vp2->hid, buffer, sizeof(buffer));
 }
 
-int
+static int
 vp2_set_resolution(struct vp2_hid *vp2, enum vp2_resolution resolution)
 {
 	const uint8_t *wireless_command = (const uint8_t *)"wireless,0";
@@ -165,6 +177,8 @@ vp2_read(struct vp2_hid *vp2, uint8_t id, const uint8_t *prefix, size_t prefix_s
 	return size;
 }
 
+// This code is now disabled since we no longer need it, it's still possibly useful in the future, but isn't now.
+#if 0
 static int
 vp2_read_int(struct vp2_hid *vp2, const char *command, int *out_value)
 {
@@ -190,38 +204,7 @@ vp2_read_int(struct vp2_hid *vp2, const char *command, int *out_value)
 
 	return 0;
 }
-
-static int
-vp2_read_ipd(struct vp2_hid *vp2, int *out, int *out_min, int *out_max, int *out_lap)
-{
-	int ret;
-
-	ret = vp2_read_int(vp2, "mfg-r-ipdadc", out);
-	if (ret < 0) {
-		VP2_ERROR(vp2, "Failed to read IPD.");
-		return ret;
-	}
-
-	ret = vp2_read_int(vp2, "mfg-r-ipdmin", out_min);
-	if (ret < 0) {
-		VP2_ERROR(vp2, "Failed to read IPD min.");
-		return ret;
-	}
-
-	ret = vp2_read_int(vp2, "mfg-r-ipdmax", out_max);
-	if (ret < 0) {
-		VP2_ERROR(vp2, "Failed to read IPD max.");
-		return ret;
-	}
-
-	ret = vp2_read_int(vp2, "mfg-r-ipdlap", out_lap);
-	if (ret < 0) {
-		VP2_ERROR(vp2, "Failed to read IPD lap.");
-		return ret;
-	}
-
-	return 0;
-}
+#endif
 
 static int
 vp2_get_config_size(struct vp2_hid *vp2, size_t *out_size)
@@ -475,6 +458,126 @@ vp2_disable_noise_cancelling(struct vp2_hid *vp2)
 	return vp2_send_noise_cancelling_commands(vp2, commands, ARRAY_SIZE(commands));
 }
 
+static int
+vp2_set_status_polling(struct vp2_hid *vp2, bool enable)
+{
+	const uint8_t data[56] = {
+	    [0] = 1,
+	    [8] = enable ? 1 : 0,
+	};
+	return vp2_write_feature(vp2, 0x04, 0x2978, data, sizeof(data));
+}
+
+/*!
+ * The buttons glitch for single status reports, for example mute flashing on while pressing the volume buttons, so a
+ * new button state is only accepted once it has been seen in this many reports in a row. A status report comes in
+ * roughly every 52ms.
+ */
+#define VP2_BUTTON_DEBOUNCE_REPORTS 2
+
+//! Button bytes from a status report, system in the high byte and the other buttons in the low byte.
+static uint16_t
+get_raw_buttons(const uint8_t *buf)
+{
+	return (uint16_t)(buf[8] << 8) | buf[9];
+}
+
+static void
+handle_status_packet(struct vp2_hid *vp2, const uint8_t *buf, uint16_t buttons)
+{
+	__le16 proximity;
+	__le16 lens_separation;
+	memcpy(&proximity, &buf[14], sizeof(proximity));
+	memcpy(&lens_separation, &buf[16], sizeof(lens_separation));
+
+	bool system = (buttons >> 8) != 0;
+	bool volume_up = buttons & 1;
+	bool volume_down = buttons & 2;
+	bool mute_mic = buttons & 4;
+
+	int64_t packed = __le16_to_cpu(proximity) |                        //
+	                 ((int64_t)__le16_to_cpu(lens_separation) << 16) | //
+	                 ((int64_t)volume_down << 32) |                    //
+	                 ((int64_t)volume_up << 33) |                      //
+	                 ((int64_t)system << 34) |                         //
+	                 ((int64_t)mute_mic << 35);                        //
+
+	// store the status
+	xrt_atomic_s64_store(&vp2->status, packed);
+}
+
+static void *
+status_thread_runner(void *ptr)
+{
+	int ret;
+	struct vp2_hid *vp2 = ptr;
+
+	// See VP2_BUTTON_DEBOUNCE_REPORTS.
+	uint16_t buttons = 0;
+	uint16_t buttons_candidate = 0;
+	int buttons_candidate_count = 0;
+
+	os_thread_helper_lock(&vp2->thread);
+	while (os_thread_helper_is_running_locked(&vp2->thread)) {
+		os_thread_helper_unlock(&vp2->thread);
+
+		timepoint_ns now = os_monotonic_get_ns();
+		if (now - vp2->last_status_report_ns > (U_TIME_1S_IN_NS * 2L)) {
+			// re-enable status polling
+			ret = vp2_set_status_polling(vp2, true);
+			if (ret < 0) {
+				VP2_WARN(vp2, "Unable to enable status polling, got %d.", ret);
+			}
+		}
+
+		uint8_t buf[VP2_DATA_SIZE];
+		ret = os_hid_read(vp2->hid, buf, sizeof(buf), 500);
+		if (ret < 0) {
+			VP2_ERROR(vp2, "Failed to read from HID, got %d.", ret);
+			os_thread_helper_lock(&vp2->thread);
+			break;
+		}
+
+		if (ret == 0) {
+			os_thread_helper_lock(&vp2->thread);
+			continue;
+		}
+
+		bool is_good = true;
+		if (ret < 18 || buf[0] != 0x03 || buf[1] != 0xd0 || buf[2] != 0x2c) {
+			VP2_DEBUG(vp2, "Got non-status packet:");
+			// U_LOG_IFL_D_HEX(vp2->log_level, buf, ret);
+			is_good = false;
+		}
+
+		if (is_good) {
+			uint16_t raw_buttons = get_raw_buttons(buf);
+			if (raw_buttons != buttons_candidate) {
+				// VP2_DEBUG(vp2, "Raw buttons changed: %04x", raw_buttons);
+				buttons_candidate = raw_buttons;
+				buttons_candidate_count = 0;
+			}
+			if (++buttons_candidate_count >= VP2_BUTTON_DEBOUNCE_REPORTS) {
+				buttons = buttons_candidate;
+			}
+
+			handle_status_packet(vp2, buf, buttons);
+			vp2->last_status_report_ns = os_monotonic_get_ns();
+		}
+
+		os_thread_helper_lock(&vp2->thread);
+	}
+	os_thread_helper_unlock(&vp2->thread);
+
+	return NULL;
+}
+
+/*
+ *
+ * 'Exported' functions.
+ *
+ */
+
 int
 vp2_hid_open(struct os_hid_device *hid_dev, struct vp2_hid **out_hid)
 {
@@ -493,15 +596,6 @@ vp2_hid_open(struct os_hid_device *hid_dev, struct vp2_hid **out_hid)
 		VP2_ERROR(vp2, "Failed to read serial number.");
 		vp2_hid_destroy(vp2);
 		return ret;
-	}
-
-	// @todo: Figure out how to compute this into a mm value.
-	int ipd, ipd_min, ipd_max, ipd_lap;
-	ret = vp2_read_ipd(vp2, &ipd, &ipd_min, &ipd_max, &ipd_lap);
-	if (ret == 0) {
-		VP2_DEBUG(vp2, "IPD: %d (min: %d, max: %d, lap: %d)", ipd, ipd_min, ipd_max, ipd_lap);
-	} else {
-		VP2_WARN(vp2, "Failed to read IPD values.");
 	}
 
 	ret = vp2_load_config(vp2);
@@ -525,6 +619,20 @@ vp2_hid_open(struct os_hid_device *hid_dev, struct vp2_hid **out_hid)
 	ret = vp2_set_brightness(vp2, debug_get_float_option_vp2_default_brightness());
 	if (ret < 0) {
 		VP2_WARN(vp2, "Failed to set default brightness.");
+	}
+
+	ret = os_thread_helper_init(&vp2->thread);
+	if (ret != 0) {
+		VP2_ERROR(vp2, "Failed to init status thread.");
+		vp2_hid_destroy(vp2);
+		return ret;
+	}
+
+	ret = os_thread_helper_start(&vp2->thread, status_thread_runner, vp2);
+	if (ret != 0) {
+		VP2_ERROR(vp2, "Failed to start status thread.");
+		vp2_hid_destroy(vp2);
+		return ret;
 	}
 
 	// @note This sleep should not be necessary here. monado needs to gain the ability to wait for displays to
@@ -592,9 +700,56 @@ vp2_set_brightness(struct vp2_hid *vp2, float brightness)
 	return ret;
 }
 
+bool
+vp2_get_status(struct vp2_hid *vp2,
+               bool *out_proximity,
+               float *out_lens_separation_meters,
+               bool *out_system,
+               bool *out_volume_up,
+               bool *out_volume_down,
+               bool *out_mute_mic)
+{
+	int64_t packed = xrt_atomic_s64_load(&vp2->status);
+	if (packed == 0) {
+		return false;
+	}
+
+	uint16_t proximity = packed & 0xffff;
+	uint16_t lens_separation = (packed >> 16) & 0xffff;
+	uint16_t volume_down = (packed >> 32) & 1;
+	uint16_t volume_up = (packed >> 33) & 1;
+	uint16_t system = (packed >> 34) & 1;
+	uint16_t mute_mic = (packed >> 35) & 1;
+
+	if (out_proximity) {
+		*out_proximity = proximity > 150;
+	}
+	if (out_lens_separation_meters) {
+		*out_lens_separation_meters = (float)lens_separation * 0.00001f;
+	}
+	if (out_system) {
+		*out_system = system;
+	}
+	if (out_volume_up) {
+		*out_volume_up = volume_up;
+	}
+	if (out_volume_down) {
+		*out_volume_down = volume_down;
+	}
+	if (out_mute_mic) {
+		*out_mute_mic = mute_mic;
+	}
+
+	return true;
+}
+
 void
 vp2_hid_destroy(struct vp2_hid *vp2)
 {
+	if (vp2->thread.initialized) {
+		os_thread_helper_destroy(&vp2->thread);
+	}
+
 	if (vp2->hid != NULL) {
 		os_hid_destroy(vp2->hid);
 		vp2->hid = NULL;

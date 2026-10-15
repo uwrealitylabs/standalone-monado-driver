@@ -101,6 +101,15 @@ vp2_get_brightness(struct vp2_hid *vp2);
 int
 vp2_set_brightness(struct vp2_hid *vp2, float brightness);
 
+bool
+vp2_get_status(struct vp2_hid *vp2,
+               bool *out_proximity,
+               float *out_lens_separation_meters,
+               bool *out_system,
+               bool *out_volume_up,
+               bool *out_volume_down,
+               bool *out_mute_mic);
+
 
 #ifdef __cplusplus
 } // extern "C"
