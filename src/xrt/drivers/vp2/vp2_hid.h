@@ -9,6 +9,9 @@
 
 #pragma once
 
+#include "xrt/xrt_defines.h"
+
+#include "os/os_hid.h"
 
 #include <assert.h>
 
@@ -100,6 +103,12 @@ vp2_get_brightness(struct vp2_hid *vp2);
 
 int
 vp2_set_brightness(struct vp2_hid *vp2, float brightness);
+
+/*!
+ * Prepares the display panels to have video terminated.
+ */
+int
+vp2_prepare_shutdown(struct vp2_hid *vp2);
 
 bool
 vp2_get_status(struct vp2_hid *vp2,
