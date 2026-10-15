@@ -563,7 +563,7 @@
 					"localized_name": "System",
 					"components": ["click"],
 					"monado_bindings": {
-						"click": "XRT_INPUT_VIVEPRO_SYSTEM_CLICK"
+						"click": "XRT_INPUT_VIVE_PRO_SYSTEM_CLICK"
 					}
 				},
 				"/input/volume_up": {
@@ -571,7 +571,7 @@
 					"localized_name": "Volume Up",
 					"components": ["click"],
 					"monado_bindings": {
-						"click": "XRT_INPUT_VIVEPRO_VOLUP_CLICK"
+						"click": "XRT_INPUT_VIVE_PRO_VOLUP_CLICK"
 					}
 				},
 				"/input/volume_down": {
@@ -579,7 +579,7 @@
 					"localized_name": "Volume Down",
 					"components": ["click"],
 					"monado_bindings": {
-						"click": "XRT_INPUT_VIVEPRO_VOLDN_CLICK"
+						"click": "XRT_INPUT_VIVE_PRO_VOLDN_CLICK"
 					}
 				},
 				"/input/mute_mic": {
@@ -587,7 +587,7 @@
 					"localized_name": "Mute Microphone",
 					"components": ["click"],
 					"monado_bindings": {
-						"click": "XRT_INPUT_VIVEPRO_MUTE_MIC_CLICK"
+						"click": "XRT_INPUT_VIVE_PRO_MUTE_MIC_CLICK"
 					}
 				}
 			}

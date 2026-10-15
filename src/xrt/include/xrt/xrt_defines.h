@@ -1053,10 +1053,10 @@ enum xrt_input_name
 	XRT_INPUT_VIVE_GRIP_POSE                                    = XRT_INPUT_NAME(0x0078, POSE),
 	XRT_INPUT_VIVE_AIM_POSE                                     = XRT_INPUT_NAME(0x0079, POSE),
 
-	XRT_INPUT_VIVEPRO_SYSTEM_CLICK                              = XRT_INPUT_NAME(0x0080, BOOLEAN),
-	XRT_INPUT_VIVEPRO_VOLUP_CLICK                               = XRT_INPUT_NAME(0x0081, BOOLEAN),
-	XRT_INPUT_VIVEPRO_VOLDN_CLICK                               = XRT_INPUT_NAME(0x0082, BOOLEAN),
-	XRT_INPUT_VIVEPRO_MUTE_MIC_CLICK                            = XRT_INPUT_NAME(0x0083, BOOLEAN),
+	XRT_INPUT_VIVE_PRO_SYSTEM_CLICK                             = XRT_INPUT_NAME(0x0080, BOOLEAN),
+	XRT_INPUT_VIVE_PRO_VOLUP_CLICK                              = XRT_INPUT_NAME(0x0081, BOOLEAN),
+	XRT_INPUT_VIVE_PRO_VOLDN_CLICK                              = XRT_INPUT_NAME(0x0082, BOOLEAN),
+	XRT_INPUT_VIVE_PRO_MUTE_MIC_CLICK                           = XRT_INPUT_NAME(0x0083, BOOLEAN),
 
 	XRT_INPUT_WMR_MENU_CLICK                                    = XRT_INPUT_NAME(0x0090, BOOLEAN),
 	XRT_INPUT_WMR_SQUEEZE_CLICK                                 = XRT_INPUT_NAME(0x0091, BOOLEAN),
