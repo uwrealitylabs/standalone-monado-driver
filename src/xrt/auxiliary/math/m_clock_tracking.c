@@ -6,8 +6,13 @@
  * @author Jan Schmidt <jan@centricular.com>
  * @ingroup aux_math
  */
+
+#include "xrt/xrt_defines.h"
+
 #include "util/u_misc.h"
+
 #include "m_clock_tracking.h"
+
 
 /* Fixed constants for discontinuity detection and
  * subsequent hold-off. These could be made configurable
