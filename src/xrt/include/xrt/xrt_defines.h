@@ -762,6 +762,7 @@ enum xrt_device_name
 
 	// Vive stuff.
 	XRT_DEVICE_VIVE_PRO,
+	XRT_DEVICE_VIVE_PRO2,
 	XRT_DEVICE_VIVE_WAND,
 	XRT_DEVICE_VIVE_TRACKER, // Generic, only used for bindings.
 	XRT_DEVICE_VIVE_TRACKER_GEN1,
