@@ -138,17 +138,18 @@ ipc_send(struct ipc_message_channel *imc, const void *data, size_t size)
 
 	// SOCK_STREAM sendmsg may return a short count. Send the rest of the buffer.
 	while (sent < size) {
-		struct msghdr msg = {0};
-		struct iovec iov = {0};
+		struct iovec iov = {
+		    .iov_base = (void *)(buf + sent),
+		    .iov_len = size - sent,
+		};
 
-		iov.iov_base = (void *)(buf + sent);
-		iov.iov_len = size - sent;
-
-		msg.msg_name = NULL;
-		msg.msg_namelen = 0;
-		msg.msg_iov = &iov;
-		msg.msg_iovlen = 1;
-		msg.msg_flags = 0;
+		struct msghdr msg = {
+		    .msg_name = NULL,
+		    .msg_namelen = 0,
+		    .msg_iov = &iov,
+		    .msg_iovlen = 1,
+		    .msg_flags = 0,
+		};
 
 		ssize_t ret = sendmsg(imc->ipc_handle, &msg, MSG_NOSIGNAL);
 		if (ret < 0) {
@@ -182,17 +183,18 @@ ipc_receive(struct ipc_message_channel *imc, void *out_data, size_t size)
 
 	// SOCK_STREAM recvmsg may return a short count. Read until size bytes arrive.
 	while (got < size) {
-		struct iovec iov = {0};
-		struct msghdr msg = {0};
+		struct iovec iov = {
+		    .iov_base = buf + got,
+		    .iov_len = size - got,
+		};
 
-		iov.iov_base = buf + got;
-		iov.iov_len = size - got;
-
-		msg.msg_name = NULL;
-		msg.msg_namelen = 0;
-		msg.msg_iov = &iov;
-		msg.msg_iovlen = 1;
-		msg.msg_flags = 0;
+		struct msghdr msg = {
+		    .msg_name = NULL,
+		    .msg_namelen = 0,
+		    .msg_iov = &iov,
+		    .msg_iovlen = 1,
+		    .msg_flags = 0,
+		};
 
 		ssize_t len = recvmsg(imc->ipc_handle, &msg, MSG_NOSIGNAL);
 		if (len < 0) {
@@ -246,15 +248,20 @@ ipc_receive_fds(struct ipc_message_channel *imc, void *out_data, size_t size, in
 	const size_t cmsg_size = CMSG_SPACE(fds_size);
 	memset(u.buf, 0, cmsg_size);
 
-	struct iovec iov = {0};
-	iov.iov_base = out_data;
-	iov.iov_len = size;
+	struct iovec iov = {
+	    .iov_base = out_data,
+	    .iov_len = size,
+	};
 
-	struct msghdr msg = {0};
-	msg.msg_iov = &iov;
-	msg.msg_iovlen = 1;
-	msg.msg_control = u.buf;
-	msg.msg_controllen = cmsg_size;
+	struct msghdr msg = {
+	    .msg_name = NULL,
+	    .msg_namelen = 0,
+	    .msg_iov = &iov,
+	    .msg_iovlen = 1,
+	    .msg_flags = 0,
+	    .msg_control = u.buf,
+	    .msg_controllen = cmsg_size,
+	};
 
 	ssize_t len = recvmsg(imc->ipc_handle, &msg, MSG_NOSIGNAL);
 	if (len != (ssize_t)size) {
@@ -304,18 +311,20 @@ ipc_send_fds(struct ipc_message_channel *imc, const void *data, size_t size, con
 	union imcontrol_buf u = {0};
 	size_t cmsg_size = CMSG_SPACE(fds_size);
 
-	struct iovec iov = {0};
-	iov.iov_base = (void *)data;
-	iov.iov_len = size;
+	struct iovec iov = {
+	    .iov_base = (void *)data,
+	    .iov_len = size,
+	};
 
-	struct msghdr msg = {0};
-	msg.msg_name = NULL;
-	msg.msg_namelen = 0;
-	msg.msg_iov = &iov;
-	msg.msg_iovlen = 1;
-	msg.msg_flags = 0;
-	msg.msg_control = u.buf;
-	msg.msg_controllen = cmsg_size;
+	struct msghdr msg = {
+	    .msg_name = NULL,
+	    .msg_namelen = 0,
+	    .msg_iov = &iov,
+	    .msg_iovlen = 1,
+	    .msg_control = u.buf,
+	    .msg_controllen = cmsg_size,
+	    .msg_flags = 0,
+	};
 
 	struct cmsghdr *cmsg = CMSG_FIRSTHDR(&msg);
 	cmsg->cmsg_level = SOL_SOCKET;
