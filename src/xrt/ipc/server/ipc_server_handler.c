@@ -2447,10 +2447,6 @@ ipc_handle_device_set_haptic_output(volatile struct ipc_client_state *ics,
 {
 	IPC_TRACE_MARKER();
 
-	if (ics->client_state.io_blocks.block_outputs) {
-		return XRT_SUCCESS;
-	}
-
 	struct ipc_message_channel *imc = (struct ipc_message_channel *)&ics->imc;
 	struct ipc_server *s = ics->server;
 
@@ -2485,21 +2481,25 @@ ipc_handle_device_set_haptic_output(volatile struct ipc_client_state *ics,
 		goto set_haptic_output_end;
 	}
 
-	uint32_t samples_consumed;
-	struct xrt_output_value value = {
-	    .type = XRT_OUTPUT_VALUE_TYPE_PCM_VIBRATION,
-	    .pcm_vibration =
-	        {
-	            .append = buffer->append,
-	            .buffer_size = buffer->num_samples,
-	            .sample_rate = buffer->sample_rate,
-	            .samples_consumed = &samples_consumed,
-	            .buffer = samples,
-	        },
-	};
+	uint32_t samples_consumed = 0;
 
-	// Set the output.
-	xrt_device_set_output(xdev, name, &value);
+	// Blocked outputs still take the PCM. The device is not asked to play it.
+	if (!ics->client_state.io_blocks.block_outputs) {
+		struct xrt_output_value value = {
+		    .type = XRT_OUTPUT_VALUE_TYPE_PCM_VIBRATION,
+		    .pcm_vibration =
+		        {
+		            .append = buffer->append,
+		            .buffer_size = buffer->num_samples,
+		            .sample_rate = buffer->sample_rate,
+		            .samples_consumed = &samples_consumed,
+		            .buffer = samples,
+		        },
+		};
+
+		// Set the output.
+		xrt_device_set_output(xdev, name, &value);
+	}
 
 	xret = ipc_send(imc, &samples_consumed, sizeof samples_consumed);
 	if (xret != XRT_SUCCESS) {
