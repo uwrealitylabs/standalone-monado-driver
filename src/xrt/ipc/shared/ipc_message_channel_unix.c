@@ -263,7 +263,12 @@ ipc_receive_fds(struct ipc_message_channel *imc, void *out_data, size_t size, in
 	    .msg_controllen = cmsg_size,
 	};
 
-	ssize_t len = recvmsg(imc->ipc_handle, &msg, MSG_NOSIGNAL);
+	// EINTR means this recvmsg moved nothing. A short count can already hold SCM_RIGHTS, so do not retry it.
+	ssize_t len;
+	do {
+		len = recvmsg(imc->ipc_handle, &msg, MSG_NOSIGNAL);
+	} while (len < 0 && errno == EINTR);
+
 	if (len != (ssize_t)size) {
 		int err = errno;
 
@@ -333,7 +338,12 @@ ipc_send_fds(struct ipc_message_channel *imc, const void *data, size_t size, con
 
 	memcpy(CMSG_DATA(cmsg), handles, fds_size);
 
-	ssize_t ret = sendmsg(imc->ipc_handle, &msg, MSG_NOSIGNAL);
+	// EINTR means this sendmsg moved nothing. A short count can already hold SCM_RIGHTS, so do not retry it.
+	ssize_t ret;
+	do {
+		ret = sendmsg(imc->ipc_handle, &msg, MSG_NOSIGNAL);
+	} while (ret < 0 && errno == EINTR);
+
 	if (ret == (ssize_t)size) {
 		return XRT_SUCCESS;
 	}
