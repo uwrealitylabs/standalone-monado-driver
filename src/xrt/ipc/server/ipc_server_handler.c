@@ -2571,10 +2571,13 @@ ipc_handle_device_get_visibility_mask(volatile struct ipc_client_state *ics,
 		goto out_free;
 	}
 
-	xret = ipc_send(imc, mask, reply.mask_size);
-	if (xret != XRT_SUCCESS) {
-		IPC_ERROR(s, "Failed to send mask");
-		goto out_free;
+	// A zero-length Windows WriteFile is a message. Send the mask only when it has bytes.
+	if (reply.mask_size != 0) {
+		xret = ipc_send(imc, mask, reply.mask_size);
+		if (xret != XRT_SUCCESS) {
+			IPC_ERROR(s, "Failed to send mask");
+			goto out_free;
+		}
 	}
 
 out_free:
