@@ -1140,6 +1140,11 @@ pssense_node_destroy(struct xrt_frame_node *node)
 	// Remove the variable tracking.
 	u_var_remove_root(pssense);
 
+	if (pssense->led_model.leds != NULL) {
+		free(pssense->led_model.leds);
+		pssense->led_model.leds = NULL;
+	}
+
 	// Actually free the pointer
 	free(pssense);
 }
@@ -1703,12 +1708,13 @@ pssense_create(struct xrt_prober *xp,
 	// Initialize the IMU orientation to be correct
 	struct xrt_quat imu_orientation_quat = quat_from_x_rot(pssense_imu_angle);
 
+	const struct t_constellation_tracker_led *led_model = NULL;
 	if (xpdev->product_id == PSSENSE_PID_LEFT) {
 		pssense->base.device_type = XRT_DEVICE_TYPE_LEFT_HAND_CONTROLLER;
 		pssense->hand = XRT_HAND_LEFT;
 
 		pssense->led_model.match_parameters = DEFAULT_MATCH_PARAMETERS;
-		pssense->led_model.leds = pssense_left_leds;
+		led_model = pssense_left_leds;
 		pssense->led_model.led_count = ARRAY_SIZE(pssense_left_leds);
 
 		pssense->tracking.T_led_imu = (struct xrt_pose){
@@ -1720,7 +1726,7 @@ pssense_create(struct xrt_prober *xp,
 		pssense->hand = XRT_HAND_RIGHT;
 
 		pssense->led_model.match_parameters = DEFAULT_MATCH_PARAMETERS;
-		pssense->led_model.leds = pssense_right_leds;
+		led_model = pssense_right_leds;
 		pssense->led_model.led_count = ARRAY_SIZE(pssense_right_leds);
 
 		pssense->tracking.T_led_imu = (struct xrt_pose){
@@ -1731,6 +1737,33 @@ pssense_create(struct xrt_prober *xp,
 		PSSENSE_ERROR(pssense, "Unable to determine controller type");
 		pssense_device_destroy(&pssense->base);
 		return NULL;
+	}
+
+	pssense->led_model.leds =
+	    U_TYPED_ARRAY_CALLOC(struct t_constellation_tracker_led, pssense->led_model.led_count);
+	if (pssense->led_model.leds == NULL) {
+		PSSENSE_ERROR(pssense, "Failed to allocate memory for LED model.");
+		pssense_device_destroy(&pssense->base);
+		return NULL;
+	}
+	memcpy(pssense->led_model.leds, led_model,
+	       sizeof(struct t_constellation_tracker_led) * pssense->led_model.led_count);
+
+	struct xrt_pose T_imu_led;
+	math_pose_invert(&pssense->tracking.T_led_imu, &T_imu_led);
+	for (size_t i = 0; i < pssense->led_model.led_count; i++) {
+		struct xrt_vec3 led_position_in_led_space = pssense->led_model.leds[i].position;
+		struct xrt_vec3 led_normal_in_led_space = pssense->led_model.leds[i].normal;
+
+		struct xrt_vec3 led_position_in_imu_space;
+		struct xrt_vec3 led_normal_in_imu_space;
+
+		math_pose_transform_point(&T_imu_led, &led_position_in_led_space, &led_position_in_imu_space);
+		math_quat_rotate_vec3(&T_imu_led.orientation, &led_normal_in_led_space, &led_normal_in_imu_space);
+
+		// Update the position/normal so that it's IMU-relative
+		pssense->led_model.leds[i].position = led_position_in_imu_space;
+		pssense->led_model.leds[i].normal = led_normal_in_imu_space;
 	}
 
 	SET_INPUT(PS_CLICK);

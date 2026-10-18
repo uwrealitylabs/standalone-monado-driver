@@ -41,7 +41,7 @@ static struct xrt_vec3 T_led_imu_right = {
  * Intercepted at address 0xdde10 in the driver, within a vector in the first
  * parameter object.
  */
-static struct t_constellation_tracker_led pssense_left_leds[] = {
+static const struct t_constellation_tracker_led pssense_left_leds[] = {
     {
         .position = {-0.012054, -0.055213, 0.038152},
         .normal = {-0.176485, -0.811967, 0.556384},
@@ -163,7 +163,7 @@ static struct t_constellation_tracker_led pssense_left_leds[] = {
     },
 };
 
-static struct t_constellation_tracker_led pssense_right_leds[] = {
+static const struct t_constellation_tracker_led pssense_right_leds[] = {
     {
         .position = {0.012054, -0.055213, 0.038152},
         .normal = {0.176485, -0.811967, 0.556384},
