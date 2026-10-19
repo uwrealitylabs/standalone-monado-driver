@@ -1,4 +1,5 @@
 // Copyright 2019-2024, Collabora, Ltd.
+// Copyright 2026, NVIDIA CORPORATION.
 // SPDX-License-Identifier: BSL-1.0
 /*!
  * @file
@@ -707,6 +708,7 @@ client_vk_swapchain_create(struct xrt_compositor *xc,
 		ret = vk_create_image_from_native(vk, &xinfo, &xscn->images[i], &sc->base.images[i], &sc->mems[i]);
 
 		if (ret != VK_SUCCESS) {
+			client_vk_swapchain_destroy(&sc->base.base);
 			return XRT_ERROR_VULKAN;
 		}
 
@@ -722,12 +724,14 @@ client_vk_swapchain_create(struct xrt_compositor *xc,
 		ret = vk_cmd_pool_create_and_begin_cmd_buffer_locked(vk, &c->pool, flags, &sc->acquire[i]);
 		if (ret != VK_SUCCESS) {
 			vk_cmd_pool_unlock(&c->pool);
+			client_vk_swapchain_destroy(&sc->base.base);
 			return XRT_ERROR_VULKAN;
 		}
 		VK_NAME_COMMAND_BUFFER(vk, sc->acquire[i], "client_vk_swapchain acquire command buffer");
 		ret = vk_cmd_pool_create_and_begin_cmd_buffer_locked(vk, &c->pool, flags, &sc->release[i]);
 		if (ret != VK_SUCCESS) {
 			vk_cmd_pool_unlock(&c->pool);
+			client_vk_swapchain_destroy(&sc->base.base);
 			return XRT_ERROR_VULKAN;
 		}
 		VK_NAME_COMMAND_BUFFER(vk, sc->release[i], "client_vk_swapchain release command buffer");
@@ -793,12 +797,14 @@ client_vk_swapchain_create(struct xrt_compositor *xc,
 		if (ret != VK_SUCCESS) {
 			VK_ERROR(vk, "vkEndCommandBuffer: %s", vk_result_string(ret));
 			vk_cmd_pool_unlock(&c->pool);
+			client_vk_swapchain_destroy(&sc->base.base);
 			return XRT_ERROR_VULKAN;
 		}
 		ret = vk->vkEndCommandBuffer(sc->release[i]);
 		if (ret != VK_SUCCESS) {
 			VK_ERROR(vk, "vkEndCommandBuffer: %s", vk_result_string(ret));
 			vk_cmd_pool_unlock(&c->pool);
+			client_vk_swapchain_destroy(&sc->base.base);
 			return XRT_ERROR_VULKAN;
 		}
 	}
