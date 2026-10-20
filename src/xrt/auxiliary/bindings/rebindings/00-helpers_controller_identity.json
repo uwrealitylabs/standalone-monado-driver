@@ -1,4 +1,13 @@
 {
+	"/helper/controller/menu": {
+		"helper": true,
+		"bindings": {
+			"/user/hand/left/input/menu": true,
+			"/user/hand/left/input/menu/click": true,
+			"/user/hand/right/input/menu": true,
+			"/user/hand/right/input/menu/click": true
+		}
+	},
 	"/helper/controller/output": {
 		"helper": true,
 		"bindings": {
@@ -44,6 +53,15 @@
 			"/user/hand/right/input/squeeze/value": true
 		}
 	},
+	"/helper/controller/system": {
+		"helper": true,
+		"bindings": {
+			"/user/hand/left/input/system": true,
+			"/user/hand/left/input/system/click": true,
+			"/user/hand/right/input/system": true,
+			"/user/hand/right/input/system/click": true
+		}
+	},
 	"/helper/controller/thumbstick": {
 		"helper": true,
 		"bindings": {
@@ -65,6 +83,33 @@
 			"/user/hand/right/input/thumbstick/x": true,
 			"/user/hand/right/input/thumbstick/xy": true,
 			"/user/hand/right/input/thumbstick/y": true
+		}
+	},
+	"/helper/controller/trackpad": {
+		"helper": true,
+		"bindings": {
+			"/user/hand/left/input/trackpad": true,
+			"/user/hand/left/input/trackpad/click": true,
+			"/user/hand/left/input/trackpad/dpad_center": true,
+			"/user/hand/left/input/trackpad/dpad_down": true,
+			"/user/hand/left/input/trackpad/dpad_left": true,
+			"/user/hand/left/input/trackpad/dpad_right": true,
+			"/user/hand/left/input/trackpad/dpad_up": true,
+			"/user/hand/left/input/trackpad/touch": true,
+			"/user/hand/left/input/trackpad/x": true,
+			"/user/hand/left/input/trackpad/xy": true,
+			"/user/hand/left/input/trackpad/y": true,
+			"/user/hand/right/input/trackpad": true,
+			"/user/hand/right/input/trackpad/click": true,
+			"/user/hand/right/input/trackpad/dpad_center": true,
+			"/user/hand/right/input/trackpad/dpad_down": true,
+			"/user/hand/right/input/trackpad/dpad_left": true,
+			"/user/hand/right/input/trackpad/dpad_right": true,
+			"/user/hand/right/input/trackpad/dpad_up": true,
+			"/user/hand/right/input/trackpad/touch": true,
+			"/user/hand/right/input/trackpad/x": true,
+			"/user/hand/right/input/trackpad/xy": true,
+			"/user/hand/right/input/trackpad/y": true
 		}
 	},
 	"/helper/controller/trigger": {
