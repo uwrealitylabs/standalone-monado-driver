@@ -389,6 +389,7 @@ ipc_handle_instance_is_system_available(volatile struct ipc_client_state *ics, b
 
 	struct ipc_server *s = ics->server;
 
+	// No client socket I/O while holding the global state lock.
 	os_mutex_lock(&s->global_state.lock);
 
 	xret = ipc_server_init_system_if_available_locked(s, ics, out_available);
@@ -709,6 +710,10 @@ ipc_handle_space_locate_space(volatile struct ipc_client_state *ics,
 	    out_relation);                      //
 }
 
+/*
+ * Exchanges several messages with the client, so do not hold the global state
+ * lock anywhere in this function.
+ */
 xrt_result_t
 ipc_handle_space_locate_spaces(volatile struct ipc_client_state *ics,
                                uint32_t base_space_id,
@@ -727,8 +732,6 @@ ipc_handle_space_locate_spaces(volatile struct ipc_client_state *ics,
 	struct xrt_space_relation *out_relations = U_TYPED_ARRAY_CALLOC(struct xrt_space_relation, space_count);
 
 	xrt_result_t xret = XRT_SUCCESS;
-
-	os_mutex_lock(&ics->server->global_state.lock);
 
 	uint32_t *space_ids = U_TYPED_ARRAY_CALLOC(uint32_t, space_count);
 
@@ -803,7 +806,6 @@ out_locate_spaces:
 	free(xspaces);
 	free(offsets);
 	free(out_relations);
-	os_mutex_unlock(&ics->server->global_state.lock);
 	return xret;
 }
 
@@ -1379,6 +1381,7 @@ ipc_handle_compositor_layer_sync(volatile struct ipc_client_state *ics,
 	 * Manage shared state.
 	 */
 
+	// No client socket I/O while holding the global state lock.
 	os_mutex_lock(&ics->server->global_state.lock);
 
 	*out_free_slot_id = (ics->server->current_slot_index + 1) % IPC_MAX_SLOTS;
@@ -1433,6 +1436,7 @@ ipc_handle_compositor_layer_sync_with_semaphore(volatile struct ipc_client_state
 	 * Manage shared state.
 	 */
 
+	// No client socket I/O while holding the global state lock.
 	os_mutex_lock(&ics->server->global_state.lock);
 
 	*out_free_slot_id = (ics->server->current_slot_index + 1) % IPC_MAX_SLOTS;
@@ -1517,7 +1521,10 @@ ipc_handle_system_get_clients(volatile struct ipc_client_state *_ics, struct ipc
 {
 	struct ipc_server *s = _ics->server;
 
-	// Look client list.
+	/*
+	 * Look client list.
+	 * No client socket I/O while holding the global state lock.
+	 */
 	os_mutex_lock(&s->global_state.lock);
 
 	uint32_t count = 0;
@@ -2439,6 +2446,10 @@ ipc_handle_device_set_output(volatile struct ipc_client_state *ics,
 	return xrt_device_set_output(xdev, name, value);
 }
 
+/*
+ * Exchanges several messages with the client, so only hold the global state
+ * lock around the device call, never across the client socket I/O.
+ */
 xrt_result_t
 ipc_handle_device_set_haptic_output(volatile struct ipc_client_state *ics,
                                     uint32_t id,
@@ -2456,8 +2467,6 @@ ipc_handle_device_set_haptic_output(volatile struct ipc_client_state *ics,
 	uint32_t device_id = id;
 	struct xrt_device *xdev = NULL;
 	GET_XDEV_OR_RETURN(ics, device_id, xdev);
-
-	os_mutex_lock(&ics->server->global_state.lock);
 
 	float *samples = U_TYPED_ARRAY_CALLOC(float, buffer->num_samples);
 
@@ -2483,6 +2492,9 @@ ipc_handle_device_set_haptic_output(volatile struct ipc_client_state *ics,
 
 	uint32_t samples_consumed = 0;
 
+	// Serializes PCM output across clients. No client socket I/O while holding the global state lock.
+	os_mutex_lock(&ics->server->global_state.lock);
+
 	// Blocked outputs still take the PCM. The device is not asked to play it.
 	if (!ics->client_state.io_blocks.block_outputs) {
 		struct xrt_output_value value = {
@@ -2501,6 +2513,8 @@ ipc_handle_device_set_haptic_output(volatile struct ipc_client_state *ics,
 		xrt_device_set_output(xdev, name, &value);
 	}
 
+	os_mutex_unlock(&ics->server->global_state.lock);
+
 	xret = ipc_send(imc, &samples_consumed, sizeof samples_consumed);
 	if (xret != XRT_SUCCESS) {
 		IPC_ERROR(ics->server, "Failed to send samples consumed");
@@ -2510,8 +2524,6 @@ ipc_handle_device_set_haptic_output(volatile struct ipc_client_state *ics,
 	xret = XRT_SUCCESS;
 
 set_haptic_output_end:
-	os_mutex_unlock(&ics->server->global_state.lock);
-
 	free(samples);
 
 	return xret;
