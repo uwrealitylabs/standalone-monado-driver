@@ -4,6 +4,18 @@
 		"target_profile": "/interaction_profiles/mnd/contactglove2_with_magnetra2_mnd",
 		"helpers": ["/helper/controller/generic_to_abab_controller"]
 	},
+	"generic_to_flipvr": {
+		"source_profile": "/interaction_profiles/khr/generic_controller",
+		"target_profile": "/interaction_profiles/mndx/flipvr",
+		"helpers": [
+			"/helper/controller/generic_primary_secondary_to_abxy",
+			"/helper/controller/output",
+			"/helper/controller/poses",
+			"/helper/controller/squeeze",
+			"/helper/controller/thumbstick_to_joystick",
+			"/helper/controller/trigger"
+		]
+	},
 	"generic_to_hydra": {
 		"source_profile": "/interaction_profiles/khr/generic_controller",
 		"target_profile": "/interaction_profiles/mndx/hydra",
