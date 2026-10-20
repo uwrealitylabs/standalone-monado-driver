@@ -553,7 +553,6 @@
 			"type": "tracked_hmd",
 			"steamvr_controllertype": "vive_pro",
 			"monado_device": "XRT_DEVICE_VIVE_PRO",
-			"extended_by": ["ext/palm_pose", "grip_surface", "ext/hand_interaction_poses"],
 			"subaction_paths": [
 				"/user/head"
 			],
