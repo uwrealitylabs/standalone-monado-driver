@@ -2335,10 +2335,9 @@
 						"value": "XRT_INPUT_FLIPVR_TRIGGER_VALUE"
 					}
 				},
-				"/input/grip": {
+				"/input/squeeze": {
 					"type": "trigger",
-					"localized_name": "Grip",
-					"steamvr_path": "/input/grip",
+					"localized_name": "Squeeze",
 					"components": ["value","click"],
 					"monado_bindings": {
 						"value": "XRT_INPUT_FLIPVR_SQUEEZE_VALUE",
