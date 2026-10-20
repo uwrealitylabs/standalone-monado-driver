@@ -1,4 +1,5 @@
 // Copyright 2026, Nick Kennedy
+// Copyright 2026, NVIDIA CORPORATION.
 // SPDX-License-Identifier: BSL-1.0
 /*!
  * @file
@@ -8,6 +9,7 @@
 
 #include "server/ipc_server.h"
 #include "server/ipc_server_thread_shutdown.h"
+#include "shared/ipc_message_channel.h"
 #include "catch_amalgamated.hpp"
 
 #include <chrono>
@@ -16,6 +18,13 @@
 #include <cwchar>
 #include <mutex>
 #include <thread>
+#include <vector>
+
+#ifndef XRT_OS_WINDOWS
+#include <sys/ioctl.h>
+#include <sys/socket.h>
+#include <unistd.h>
+#endif
 
 namespace {
 struct Fixture
@@ -34,6 +43,10 @@ struct Fixture
 	bool read_attempted = false;
 	BOOL read_succeeded = TRUE;
 	DWORD read_error = ERROR_SUCCESS;
+#else
+	int socket_fd = -1;
+	bool socket_send = false;
+	xrt_result_t socket_result = XRT_SUCCESS;
 #endif
 	struct Client
 	{
@@ -44,11 +57,9 @@ struct Fixture
 	Fixture()
 	{
 		os_mutex_init(&server->global_state.lock);
-#ifdef XRT_OS_WINDOWS
 		for (auto &thread : server->threads) {
 			thread.ics.imc.ipc_handle = XRT_IPC_HANDLE_INVALID;
 		}
-#endif
 	}
 	~Fixture()
 	{
@@ -91,6 +102,24 @@ struct Fixture
 				f.read_succeeded = ReadFile(f.pipe, &byte, 1, &bytes, nullptr);
 				f.read_error = f.read_succeeded ? ERROR_SUCCESS : GetLastError();
 				lock.lock();
+			} else
+#else
+			if (f.socket_fd >= 0) {
+				// Model a handler blocked mid-message on its client socket.
+				lock.unlock();
+				struct ipc_message_channel imc = {f.socket_fd, U_LOGGING_WARN};
+				xrt_result_t xret;
+				if (f.socket_send) {
+					// More than the socket buffer holds, and the peer never reads.
+					std::vector<uint8_t> data(4 * 1024 * 1024);
+					xret = ipc_send(&imc, data.data(), data.size());
+				} else {
+					// The peer sends less than this, so the receive waits for the rest.
+					uint8_t data[64];
+					xret = ipc_receive(&imc, data, sizeof(data));
+				}
+				lock.lock();
+				f.socket_result = xret;
 			} else
 #endif
 			{
@@ -253,5 +282,83 @@ TEST_CASE("Windows server shutdown releases synchronous named-pipe reads")
 	CHECK(f.exited == 1);
 	CHECK(f.server->threads[0].state == IPC_THREAD_READY);
 	ipc_server_stop_and_join_client_threads(f.server.get());
+}
+#endif
+
+#ifndef XRT_OS_WINDOWS
+namespace {
+struct SocketPair
+{
+	int fds[2] = {-1, -1};
+	~SocketPair()
+	{
+		for (int fd : fds) {
+			if (fd >= 0) {
+				close(fd);
+			}
+		}
+	}
+};
+
+int
+queued_bytes(int fd)
+{
+	int queued = 0;
+	REQUIRE(ioctl(fd, FIONREAD, &queued) == 0);
+	return queued;
+}
+} // namespace
+
+TEST_CASE("Unix server shutdown releases a receive waiting for the rest of a payload")
+{
+	// Declared before the fixture so the sockets outlive its thread join.
+	SocketPair sockets;
+	REQUIRE(socketpair(AF_UNIX, SOCK_STREAM, 0, sockets.fds) == 0);
+	Fixture f;
+	f.socket_fd = sockets.fds[0];
+	f.server->threads[0].ics.imc.ipc_handle = sockets.fds[0];
+
+	// Send 16 of the 64 bytes the client thread waits for.
+	uint8_t partial[16] = {};
+	REQUIRE(send(sockets.fds[1], partial, sizeof(partial), MSG_NOSIGNAL) == (ssize_t)sizeof(partial));
+
+	f.start(1);
+
+	// Once the 16 bytes are consumed, the receive is waiting for the rest.
+	auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(2);
+	while (queued_bytes(sockets.fds[0]) != 0 && std::chrono::steady_clock::now() < deadline) {
+		std::this_thread::yield();
+	}
+	REQUIRE(queued_bytes(sockets.fds[0]) == 0);
+
+	ipc_server_stop_and_join_client_threads(f.server.get());
+	CHECK(f.socket_result == XRT_ERROR_IPC_FAILURE);
+	CHECK(f.exited == 1);
+	CHECK(f.server->threads[0].state == IPC_THREAD_READY);
+}
+
+TEST_CASE("Unix server shutdown releases a send the client never reads")
+{
+	// Declared before the fixture so the sockets outlive its thread join.
+	SocketPair sockets;
+	REQUIRE(socketpair(AF_UNIX, SOCK_STREAM, 0, sockets.fds) == 0);
+	Fixture f;
+	f.socket_fd = sockets.fds[0];
+	f.socket_send = true;
+	f.server->threads[0].ics.imc.ipc_handle = sockets.fds[0];
+
+	f.start(1);
+
+	// Wait until the send has started filling the peer's queue.
+	auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(2);
+	while (queued_bytes(sockets.fds[1]) == 0 && std::chrono::steady_clock::now() < deadline) {
+		std::this_thread::yield();
+	}
+	REQUIRE(queued_bytes(sockets.fds[1]) > 0);
+
+	ipc_server_stop_and_join_client_threads(f.server.get());
+	CHECK(f.socket_result == XRT_ERROR_IPC_FAILURE);
+	CHECK(f.exited == 1);
+	CHECK(f.server->threads[0].state == IPC_THREAD_READY);
 }
 #endif
