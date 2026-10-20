@@ -1656,6 +1656,7 @@ oxr_space_type_is_reference(enum oxr_space_type space_type)
 	case OXR_SPACE_TYPE_REFERENCE_COMBINED_EYE_VARJO:
 	case OXR_SPACE_TYPE_REFERENCE_LOCALIZATION_MAP_ML:
 	case OXR_SPACE_TYPE_REFERENCE_UNBOUNDED_ANDROID:
+	case OXR_SPACE_TYPE_REFERENCE_STATIONARY_EXT:
 		// These are reference spaces.
 		return true;
 
