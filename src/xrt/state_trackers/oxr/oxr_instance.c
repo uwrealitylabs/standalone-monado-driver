@@ -37,6 +37,7 @@
 #include "oxr_roles.h"
 #include "oxr_generated_bindings.h"
 #include "actions/oxr_binding.h"
+#include "actions/oxr_binding_registry.h"
 #include "actions/oxr_subaction.h"
 
 #include <sys/types.h>
@@ -86,6 +87,9 @@ oxr_instance_destroy(struct oxr_logger *log, struct oxr_handle_base *hb)
 		oxr_refcounted_unref(&inst->action_context->base);
 		inst->action_context = NULL;
 	}
+
+	oxr_binding_registry_unref(inst->binding_registry);
+	inst->binding_registry = NULL;
 
 	// Maybe a no-op, needs to happen before path_store if not.
 	oxr_instance_path_cache_fini(&inst->path_cache);
@@ -312,7 +316,12 @@ oxr_instance_create(struct oxr_logger *log,
 	}
 
 	// Might use the path_store and path_cache, do after them.
-	ret = oxr_instance_action_context_create_with_registry(log, &inst->path_store, &inst->action_context);
+	ret = oxr_binding_registry_create(log, &inst->path_store, &inst->binding_registry);
+	if (ret != XR_SUCCESS) {
+		return oxr_error(log, ret, "Failed to create binding registry");
+	}
+
+	ret = oxr_instance_action_context_create(log, inst->binding_registry, &inst->action_context);
 	if (ret != XR_SUCCESS) {
 		return oxr_error(log, ret, "Failed to create instance action context");
 	}

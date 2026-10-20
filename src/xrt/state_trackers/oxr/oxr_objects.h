@@ -1185,6 +1185,9 @@ struct oxr_instance
 	//! Path cache for actions, needs path_store to work.
 	struct oxr_instance_path_cache path_cache;
 
+	//! Binding registry (reference-counted), shared by all action contexts of this instance.
+	struct oxr_binding_registry *binding_registry;
+
 	//! The default action context (reference-counted). Owned by instance; action sets also hold references.
 	struct oxr_instance_action_context *action_context;
 
