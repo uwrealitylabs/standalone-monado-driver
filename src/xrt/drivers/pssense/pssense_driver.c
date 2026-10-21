@@ -1542,7 +1542,6 @@ pssense_get_tracked_pose(struct xrt_device *xdev,
 	}
 
 	struct xrt_relation_chain xrc = {0};
-	struct xrt_pose pose_correction = XRT_POSE_IDENTITY;
 
 	float sx = pssense->hand == XRT_HAND_LEFT ? 1.0f : -1.0f;
 	struct xrt_pose T_steamvrroot_model = {
@@ -1586,13 +1585,7 @@ pssense_get_tracked_pose(struct xrt_device *xdev,
 	};
 #endif
 
-	// If we aren't using constellation tracking, rotate the IMU orientation so that it's facing the same direction
-	// as the LED model is facing
-	if (!pssense->tracking.use_constellation) {
-		pose_correction.orientation = pssense->tracking.T_led_imu.orientation;
-	}
-
-	m_relation_chain_push_pose(&xrc, &pose_correction);
+	m_relation_chain_push_inverted_pose_if_not_identity(&xrc, &pssense->tracking.T_led_imu);
 
 	struct xrt_space_relation *rel = m_relation_chain_reserve(&xrc);
 
