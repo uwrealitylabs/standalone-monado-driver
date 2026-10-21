@@ -959,15 +959,27 @@ pssense_get_constellation_pose(struct pssense_device *pssense,
 }
 
 static void
-parse_pssense_calibration(const struct pssense_calibration_data *calibration_data,
+parse_pssense_calibration(struct pssense_device *pssense,
+                          const struct pssense_calibration_data *calibration_data,
                           struct pssense_parsed_calibration *out_parsed)
 {
-	const float rad_per_sec_ref = M_PI * 3.f;
+	int16_t gyro_speed_ref1 = (int16_t)__le16_to_cpu(calibration_data->gyro_speed_ref1);
+	int16_t gyro_speed_ref2 = (int16_t)__le16_to_cpu(calibration_data->gyro_speed_ref2);
+	float rad_per_sec_ref = ((float)gyro_speed_ref1 + (float)gyro_speed_ref2) * 0.5f * (float)(M_PI / 180.0);
+	if (!(rad_per_sec_ref > 0.0f)) {
+		PSSENSE_DEBUG(pssense, "Got invalid gyro speed reference of %f rad/s. Falling back to default.",
+		              rad_per_sec_ref);
+		rad_per_sec_ref = (float)(M_PI * 3.0);
+	}
+
+	PSSENSE_DEBUG(pssense, "Gyro speed reference: %f rad/s", rad_per_sec_ref);
 
 	int16_t gyro_plus_x = __le16_to_cpu(calibration_data->gyro_plus_x);
 	int16_t gyro_minus_x = __le16_to_cpu(calibration_data->gyro_minus_x);
+
 	int16_t gyro_plus_y = __le16_to_cpu(calibration_data->gyro_plus_y);
 	int16_t gyro_minus_y = __le16_to_cpu(calibration_data->gyro_minus_y);
+
 	int16_t gyro_plus_z = __le16_to_cpu(calibration_data->gyro_plus_z);
 	int16_t gyro_minus_z = __le16_to_cpu(calibration_data->gyro_minus_z);
 
@@ -1009,10 +1021,17 @@ parse_pssense_calibration(const struct pssense_calibration_data *calibration_dat
 	    .z = (1.0f / (float)(accel_plus_z - accel_bias.z)) * MATH_GRAVITY_M_S2,
 	};
 
+	PSSENSE_DEBUG(pssense, "Gyro scale: %f\t%f\t%f rad/s", gyro_scale.x, gyro_scale.y, gyro_scale.z);
+	PSSENSE_DEBUG(pssense, "Gyro bias: %d\t%d\t%d", gyro_bias.x, gyro_bias.y, gyro_bias.z);
+	PSSENSE_DEBUG(pssense, "Accel scale: %f\t%f\t%f m/s^2", accel_scale.x, accel_scale.y, accel_scale.z);
+	PSSENSE_DEBUG(pssense, "Accel bias: %f\t%f\t%f", accel_bias.x, accel_bias.y, accel_bias.z);
+
 	(*out_parsed) = XRT_C11_COMPOUND(struct pssense_parsed_calibration){
-	    .gyro_bias = gyro_bias,
 	    .gyro_scale = gyro_scale,
 	    .accel_scale = accel_scale,
+
+	    .accel_bias = accel_bias,
+	    .gyro_bias = gyro_bias,
 	};
 }
 
@@ -1074,7 +1093,7 @@ pssense_get_calibration_data(struct pssense_device *pssense)
 		}
 	} while (invalid_crc);
 
-	parse_pssense_calibration(&calibration_data, &pssense->calibration);
+	parse_pssense_calibration(pssense, &calibration_data, &pssense->calibration);
 	pssense->has_calibration = true;
 
 	PSSENSE_DEBUG(pssense, "Calibration data retrieved and parsed successfully");
