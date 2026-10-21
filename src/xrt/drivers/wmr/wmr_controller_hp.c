@@ -59,66 +59,6 @@ enum wmr_controller_hp_input_index
 #define SET_INPUT(wcb, INDEX, NAME)                                                                                    \
 	(wcb->base.inputs[WMR_CONTROLLER_INDEX_##INDEX].name = XRT_INPUT_G2_CONTROLLER_##NAME)
 
-/*
- *
- * Bindings
- *
- */
-
-static struct xrt_binding_input_pair touch_inputs[19] = {
-    {XRT_INPUT_TOUCH_X_CLICK, XRT_INPUT_G2_CONTROLLER_X_CLICK},
-    {XRT_INPUT_TOUCH_X_TOUCH, XRT_INPUT_G2_CONTROLLER_X_CLICK},
-    {XRT_INPUT_TOUCH_Y_CLICK, XRT_INPUT_G2_CONTROLLER_Y_CLICK},
-    {XRT_INPUT_TOUCH_Y_TOUCH, XRT_INPUT_G2_CONTROLLER_Y_CLICK},
-    {XRT_INPUT_TOUCH_MENU_CLICK, XRT_INPUT_G2_CONTROLLER_MENU_CLICK},
-    {XRT_INPUT_TOUCH_MENU_CLICK, XRT_INPUT_G2_CONTROLLER_HOME_CLICK},
-    {XRT_INPUT_TOUCH_A_CLICK, XRT_INPUT_G2_CONTROLLER_A_CLICK},
-    {XRT_INPUT_TOUCH_A_TOUCH, XRT_INPUT_G2_CONTROLLER_A_CLICK},
-    {XRT_INPUT_TOUCH_B_CLICK, XRT_INPUT_G2_CONTROLLER_B_CLICK},
-    {XRT_INPUT_TOUCH_B_TOUCH, XRT_INPUT_G2_CONTROLLER_B_CLICK},
-    {XRT_INPUT_TOUCH_SYSTEM_CLICK, XRT_INPUT_G2_CONTROLLER_MENU_CLICK},
-    {XRT_INPUT_TOUCH_SYSTEM_CLICK, XRT_INPUT_G2_CONTROLLER_HOME_CLICK},
-    {XRT_INPUT_TOUCH_SQUEEZE_VALUE, XRT_INPUT_G2_CONTROLLER_SQUEEZE_VALUE},
-    {XRT_INPUT_TOUCH_TRIGGER_TOUCH, XRT_INPUT_G2_CONTROLLER_TRIGGER_VALUE},
-    {XRT_INPUT_TOUCH_TRIGGER_VALUE, XRT_INPUT_G2_CONTROLLER_TRIGGER_VALUE},
-    {XRT_INPUT_TOUCH_THUMBSTICK_CLICK, XRT_INPUT_G2_CONTROLLER_THUMBSTICK_CLICK},
-    {XRT_INPUT_TOUCH_THUMBSTICK, XRT_INPUT_G2_CONTROLLER_THUMBSTICK},
-    {XRT_INPUT_TOUCH_GRIP_POSE, XRT_INPUT_G2_CONTROLLER_GRIP_POSE},
-    {XRT_INPUT_TOUCH_AIM_POSE, XRT_INPUT_G2_CONTROLLER_AIM_POSE},
-};
-
-static struct xrt_binding_output_pair touch_outputs[1] = {
-    {XRT_OUTPUT_NAME_TOUCH_HAPTIC, XRT_OUTPUT_NAME_G2_CONTROLLER_HAPTIC},
-};
-
-static struct xrt_binding_input_pair simple_inputs[4] = {
-    {XRT_INPUT_SIMPLE_SELECT_CLICK, XRT_INPUT_G2_CONTROLLER_TRIGGER_VALUE},
-    {XRT_INPUT_SIMPLE_MENU_CLICK, XRT_INPUT_G2_CONTROLLER_MENU_CLICK},
-    {XRT_INPUT_SIMPLE_GRIP_POSE, XRT_INPUT_G2_CONTROLLER_GRIP_POSE},
-    {XRT_INPUT_SIMPLE_AIM_POSE, XRT_INPUT_G2_CONTROLLER_AIM_POSE},
-};
-
-static struct xrt_binding_output_pair simple_outputs[1] = {
-    {XRT_OUTPUT_NAME_SIMPLE_VIBRATION, XRT_OUTPUT_NAME_G2_CONTROLLER_HAPTIC},
-};
-
-static struct xrt_binding_profile binding_profiles[2] = {
-    {
-        .name = XRT_DEVICE_TOUCH_CONTROLLER,
-        .inputs = touch_inputs,
-        .input_count = ARRAY_SIZE(touch_inputs),
-        .outputs = touch_outputs,
-        .output_count = ARRAY_SIZE(touch_outputs),
-    },
-    {
-        .name = XRT_DEVICE_SIMPLE_CONTROLLER,
-        .inputs = simple_inputs,
-        .input_count = ARRAY_SIZE(simple_inputs),
-        .outputs = simple_outputs,
-        .output_count = ARRAY_SIZE(simple_outputs),
-    },
-};
-
 /* OG WMR Controller inputs struct */
 struct wmr_controller_hp_input
 {
@@ -398,9 +338,6 @@ wmr_controller_hp_create(struct wmr_controller_connection *conn,
 	ctrl->last_inputs.imu.timestamp_ticks = 0;
 
 	wcb->base.outputs[0].name = XRT_OUTPUT_NAME_WMR_HAPTIC;
-
-	wcb->base.binding_profiles = binding_profiles;
-	wcb->base.binding_profile_count = ARRAY_SIZE(binding_profiles);
 
 	u_var_add_bool(wcb, &ctrl->last_inputs.menu, "input.menu");
 	u_var_add_bool(wcb, &ctrl->last_inputs.home, "input.home");

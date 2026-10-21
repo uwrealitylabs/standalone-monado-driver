@@ -1135,36 +1135,6 @@ psvr2_end_feature(struct xrt_device *xdev, enum xrt_device_feature_type type)
 	return XRT_SUCCESS;
 }
 
-static struct xrt_binding_input_pair vive_pro_inputs_psvr2[] = {
-    {XRT_INPUT_VIVE_PRO_SYSTEM_CLICK, XRT_INPUT_PSVR2_SYSTEM_CLICK},
-};
-
-static struct xrt_binding_input_pair blubur_s1_inputs_psvr2[] = {
-    {XRT_INPUT_BLUBUR_S1_MENU_CLICK, XRT_INPUT_PSVR2_SYSTEM_CLICK},
-};
-
-static struct xrt_binding_input_pair eye_gaze_inputs_psvr2[] = {
-    {XRT_INPUT_GENERIC_EYE_GAZE_POSE, XRT_INPUT_GENERIC_EYE_GAZE_POSE},
-};
-
-static struct xrt_binding_profile psvr2_binding_profiles[] = {
-    {
-        .name = XRT_DEVICE_EYE_GAZE_INTERACTION,
-        .inputs = eye_gaze_inputs_psvr2,
-        .input_count = ARRAY_SIZE(eye_gaze_inputs_psvr2),
-    },
-    {
-        .name = XRT_DEVICE_VIVE_PRO,
-        .inputs = vive_pro_inputs_psvr2,
-        .input_count = ARRAY_SIZE(vive_pro_inputs_psvr2),
-    },
-    {
-        .name = XRT_DEVICE_BLUBUR_S1,
-        .inputs = blubur_s1_inputs_psvr2,
-        .input_count = ARRAY_SIZE(blubur_s1_inputs_psvr2),
-    },
-};
-
 struct xrt_device *
 psvr2_hmd_create(struct xrt_prober_device *xpdev)
 {
@@ -1238,9 +1208,6 @@ psvr2_hmd_create(struct xrt_prober_device *xpdev)
 	hmd->base.inputs[PSVR2_HMD_INPUT_ANDROID_FACE_TRACKING].name = XRT_INPUT_ANDROID_FACE_TRACKING;
 
 	hmd->base.outputs[0].name = XRT_OUTPUT_NAME_PSVR2_HAPTIC;
-
-	hmd->base.binding_profiles = psvr2_binding_profiles;
-	hmd->base.binding_profile_count = ARRAY_SIZE(psvr2_binding_profiles);
 
 	hmd->base.supported.orientation_tracking = true;
 	hmd->base.supported.position_tracking = true;

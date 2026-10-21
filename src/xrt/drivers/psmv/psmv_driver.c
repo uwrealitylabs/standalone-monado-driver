@@ -1005,63 +1005,6 @@ psmv_get_battery_status(struct xrt_device *xdev, bool *out_present, bool *out_ch
 
 /*
  *
- * Bindings
- *
- */
-
-static struct xrt_binding_input_pair simple_inputs[] = {
-    {XRT_INPUT_SIMPLE_SELECT_CLICK, XRT_INPUT_PSMV_TRIGGER_VALUE},
-    {XRT_INPUT_SIMPLE_MENU_CLICK, XRT_INPUT_PSMV_MOVE_CLICK},
-    {XRT_INPUT_SIMPLE_GRIP_POSE, XRT_INPUT_PSMV_GRIP_POSE},
-    {XRT_INPUT_SIMPLE_AIM_POSE, XRT_INPUT_PSMV_AIM_POSE},
-};
-
-static struct xrt_binding_output_pair simple_outputs[] = {
-    {XRT_OUTPUT_NAME_SIMPLE_VIBRATION, XRT_OUTPUT_NAME_PSMV_RUMBLE_VIBRATION},
-};
-
-static struct xrt_binding_input_pair touch_inputs[] = {
-    {XRT_INPUT_TOUCH_X_CLICK, XRT_INPUT_PSMV_CROSS_CLICK},
-    {XRT_INPUT_TOUCH_X_TOUCH, XRT_INPUT_PSMV_CROSS_CLICK},
-    {XRT_INPUT_TOUCH_Y_CLICK, XRT_INPUT_PSMV_SQUARE_CLICK},
-    {XRT_INPUT_TOUCH_Y_TOUCH, XRT_INPUT_PSMV_SQUARE_CLICK},
-    {XRT_INPUT_TOUCH_MENU_CLICK, XRT_INPUT_PSMV_PS_CLICK},
-    {XRT_INPUT_TOUCH_A_CLICK, XRT_INPUT_PSMV_CIRCLE_CLICK},
-    {XRT_INPUT_TOUCH_A_TOUCH, XRT_INPUT_PSMV_CIRCLE_CLICK},
-    {XRT_INPUT_TOUCH_B_CLICK, XRT_INPUT_PSMV_TRIANGLE_CLICK},
-    {XRT_INPUT_TOUCH_B_TOUCH, XRT_INPUT_PSMV_TRIANGLE_CLICK},
-    {XRT_INPUT_TOUCH_SYSTEM_CLICK, XRT_INPUT_PSMV_PS_CLICK},
-    {XRT_INPUT_TOUCH_SQUEEZE_VALUE, XRT_INPUT_PSMV_START_CLICK},
-    {XRT_INPUT_TOUCH_TRIGGER_TOUCH, XRT_INPUT_PSMV_TRIGGER_VALUE},
-    {XRT_INPUT_TOUCH_TRIGGER_VALUE, XRT_INPUT_PSMV_TRIGGER_VALUE},
-    {XRT_INPUT_TOUCH_GRIP_POSE, XRT_INPUT_PSMV_GRIP_POSE},
-    {XRT_INPUT_TOUCH_AIM_POSE, XRT_INPUT_PSMV_AIM_POSE},
-};
-
-static struct xrt_binding_output_pair touch_outputs[] = {
-    {XRT_OUTPUT_NAME_TOUCH_HAPTIC, XRT_OUTPUT_NAME_PSMV_RUMBLE_VIBRATION},
-};
-
-static struct xrt_binding_profile binding_profiles[] = {
-    {
-        .name = XRT_DEVICE_TOUCH_CONTROLLER,
-        .inputs = touch_inputs,
-        .input_count = ARRAY_SIZE(touch_inputs),
-        .outputs = touch_outputs,
-        .output_count = ARRAY_SIZE(touch_outputs),
-    },
-    {
-        .name = XRT_DEVICE_SIMPLE_CONTROLLER,
-        .inputs = simple_inputs,
-        .input_count = ARRAY_SIZE(simple_inputs),
-        .outputs = simple_outputs,
-        .output_count = ARRAY_SIZE(simple_outputs),
-    },
-};
-
-
-/*
- *
  * Prober functions.
  *
  */
@@ -1122,8 +1065,6 @@ psmv_device_create(struct xrt_prober *xp, struct xrt_prober_device *xpdev, struc
 	psmv->base.set_output = psmv_device_set_output;
 	psmv->base.get_battery_status = psmv_get_battery_status;
 	psmv->base.name = XRT_DEVICE_PSMV;
-	psmv->base.binding_profiles = binding_profiles;
-	psmv->base.binding_profile_count = ARRAY_SIZE(binding_profiles);
 	psmv->fusion.rot.w = 1.0f;
 	psmv->fusion.fusion = imu_fusion_create();
 	psmv->log_level = debug_get_log_option_psmv_log();

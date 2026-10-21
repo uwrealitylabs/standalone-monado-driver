@@ -59,60 +59,6 @@
 DEBUG_GET_ONCE_LOG_OPTION(pssense_log, "PSSENSE_LOG", U_LOGGING_INFO)
 DEBUG_GET_ONCE_BOOL_OPTION(pssense_pc_polling_rate, "PSSENSE_SET_PC_POLLING_RATE", true)
 
-static struct xrt_binding_input_pair touch_inputs_pssense[] = {
-    {XRT_INPUT_TOUCH_X_CLICK, XRT_INPUT_PSSENSE_SQUARE_CLICK},
-    {XRT_INPUT_TOUCH_X_TOUCH, XRT_INPUT_PSSENSE_SQUARE_TOUCH},
-    {XRT_INPUT_TOUCH_Y_CLICK, XRT_INPUT_PSSENSE_TRIANGLE_CLICK},
-    {XRT_INPUT_TOUCH_Y_TOUCH, XRT_INPUT_PSSENSE_TRIANGLE_TOUCH},
-    {XRT_INPUT_TOUCH_MENU_CLICK, XRT_INPUT_PSSENSE_PS_CLICK},
-    {XRT_INPUT_TOUCH_A_CLICK, XRT_INPUT_PSSENSE_CROSS_CLICK},
-    {XRT_INPUT_TOUCH_A_TOUCH, XRT_INPUT_PSSENSE_CROSS_TOUCH},
-    {XRT_INPUT_TOUCH_B_CLICK, XRT_INPUT_PSSENSE_CIRCLE_CLICK},
-    {XRT_INPUT_TOUCH_B_TOUCH, XRT_INPUT_PSSENSE_CIRCLE_TOUCH},
-    {XRT_INPUT_TOUCH_SYSTEM_CLICK, XRT_INPUT_PSSENSE_PS_CLICK},
-    {XRT_INPUT_TOUCH_SQUEEZE_VALUE, XRT_INPUT_PSSENSE_SQUEEZE_CLICK},
-    {XRT_INPUT_TOUCH_TRIGGER_TOUCH, XRT_INPUT_PSSENSE_TRIGGER_TOUCH},
-    {XRT_INPUT_TOUCH_TRIGGER_VALUE, XRT_INPUT_PSSENSE_TRIGGER_VALUE},
-    {XRT_INPUT_TOUCH_THUMBSTICK_CLICK, XRT_INPUT_PSSENSE_THUMBSTICK_CLICK},
-    {XRT_INPUT_TOUCH_THUMBSTICK_TOUCH, XRT_INPUT_PSSENSE_THUMBSTICK_TOUCH},
-    {XRT_INPUT_TOUCH_THUMBSTICK, XRT_INPUT_PSSENSE_THUMBSTICK},
-    {XRT_INPUT_TOUCH_GRIP_POSE, XRT_INPUT_PSSENSE_GRIP_POSE},
-    {XRT_INPUT_TOUCH_AIM_POSE, XRT_INPUT_PSSENSE_AIM_POSE},
-    {XRT_INPUT_TOUCH_TRIGGER_PROXIMITY, XRT_INPUT_PSSENSE_TRIGGER_PROXIMITY},
-};
-
-static struct xrt_binding_output_pair touch_outputs_pssense[] = {
-    {XRT_OUTPUT_NAME_TOUCH_HAPTIC, XRT_OUTPUT_NAME_PSSENSE_VIBRATION},
-};
-
-static struct xrt_binding_input_pair simple_inputs_pssense[] = {
-    {XRT_INPUT_SIMPLE_SELECT_CLICK, XRT_INPUT_PSSENSE_TRIGGER_VALUE},
-    {XRT_INPUT_SIMPLE_MENU_CLICK, XRT_INPUT_PSSENSE_OPTIONS_CLICK},
-    {XRT_INPUT_SIMPLE_GRIP_POSE, XRT_INPUT_PSSENSE_GRIP_POSE},
-    {XRT_INPUT_SIMPLE_AIM_POSE, XRT_INPUT_PSSENSE_AIM_POSE},
-};
-
-static struct xrt_binding_output_pair simple_outputs_pssense[] = {
-    {XRT_OUTPUT_NAME_SIMPLE_VIBRATION, XRT_OUTPUT_NAME_PSSENSE_VIBRATION},
-};
-
-static struct xrt_binding_profile binding_profiles_pssense[] = {
-    {
-        .name = XRT_DEVICE_TOUCH_CONTROLLER,
-        .inputs = touch_inputs_pssense,
-        .input_count = ARRAY_SIZE(touch_inputs_pssense),
-        .outputs = touch_outputs_pssense,
-        .output_count = ARRAY_SIZE(touch_outputs_pssense),
-    },
-    {
-        .name = XRT_DEVICE_SIMPLE_CONTROLLER,
-        .inputs = simple_inputs_pssense,
-        .input_count = ARRAY_SIZE(simple_inputs_pssense),
-        .outputs = simple_outputs_pssense,
-        .output_count = ARRAY_SIZE(simple_outputs_pssense),
-    },
-};
-
 /*!
  * Indices where each input is in the input list.
  */
@@ -1715,9 +1661,6 @@ pssense_create(struct xrt_prober *xp,
 
 	pssense->base.supported.orientation_tracking = true;
 	pssense->base.supported.battery_status = true;
-
-	pssense->base.binding_profiles = binding_profiles_pssense;
-	pssense->base.binding_profile_count = ARRAY_SIZE(binding_profiles_pssense);
 
 	pssense->usb = xpdev->bus == XRT_BUS_TYPE_USB;
 

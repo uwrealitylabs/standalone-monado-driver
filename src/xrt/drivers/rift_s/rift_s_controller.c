@@ -40,27 +40,6 @@
 /* Set to 1 to print controller states continuously */
 #define DUMP_CONTROLLER_STATE 0
 
-static struct xrt_binding_input_pair simple_inputs_rift_s[4] = {
-    {XRT_INPUT_SIMPLE_SELECT_CLICK, XRT_INPUT_TOUCH_TRIGGER_VALUE},
-    {XRT_INPUT_SIMPLE_MENU_CLICK, XRT_INPUT_TOUCH_MENU_CLICK},
-    {XRT_INPUT_SIMPLE_GRIP_POSE, XRT_INPUT_TOUCH_GRIP_POSE},
-    {XRT_INPUT_SIMPLE_AIM_POSE, XRT_INPUT_TOUCH_AIM_POSE},
-};
-
-static struct xrt_binding_output_pair simple_outputs_rift_s[1] = {
-    {XRT_OUTPUT_NAME_SIMPLE_VIBRATION, XRT_OUTPUT_NAME_TOUCH_HAPTIC},
-};
-
-static struct xrt_binding_profile binding_profiles_rift_s[1] = {
-    {
-        .name = XRT_DEVICE_SIMPLE_CONTROLLER,
-        .inputs = simple_inputs_rift_s,
-        .input_count = ARRAY_SIZE(simple_inputs_rift_s),
-        .outputs = simple_outputs_rift_s,
-        .output_count = ARRAY_SIZE(simple_outputs_rift_s),
-    },
-};
-
 enum touch_controller_input_index
 {
 	/* Left controller */
@@ -647,9 +626,6 @@ rift_s_controller_create(struct rift_s_system *sys, enum xrt_device_type device_
 	SET_TOUCH_INPUT(ctrl, AIM_POSE);
 
 	ctrl->base.outputs[0].name = XRT_OUTPUT_NAME_TOUCH_HAPTIC;
-
-	ctrl->base.binding_profiles = binding_profiles_rift_s;
-	ctrl->base.binding_profile_count = ARRAY_SIZE(binding_profiles_rift_s);
 
 	u_var_add_root(ctrl, ctrl->base.str, true);
 	u_var_add_gui_header(ctrl, NULL, "Tracking");

@@ -454,9 +454,6 @@ ipc_client_xdev_init(struct ipc_client_xdev *icx,
 	// Helpers.
 	xrt_result_t xret = XRT_SUCCESS;
 
-	// Queried later.
-	struct ipc_binding_profile_info *temp_ibpis = NULL;
-
 	// Important fields.
 	icx->ipc_c = ipc_c;
 
@@ -561,82 +558,9 @@ ipc_client_xdev_init(struct ipc_client_xdev *icx,
 		icx->base.outputs = NULL;
 	}
 
-	// Receive binding profiles from varlen data.
-	if (info.binding_profile_count > 0) {
-		/*
-		 * This needs to live until after all of the bindings have
-		 * been setup as it contains the offsets into the input and
-		 * output pairs arrays.
-		 */
-		temp_ibpis = U_TYPED_ARRAY_CALLOC(struct ipc_binding_profile_info, info.binding_profile_count);
-		xret = ipc_receive(&ipc_c->imc, temp_ibpis,
-		                   sizeof(struct ipc_binding_profile_info) * info.binding_profile_count);
-		IPC_CHK_WITH_GOTO(ipc_c, xret, "ipc_receive(binding profiles)", out_free_and_unlock);
-	}
-
-	// Receive all input pairs from varlen data.
-	if (info.total_input_pair_count > 0) {
-		size_t size = sizeof(struct xrt_binding_input_pair) * info.total_input_pair_count;
-
-		// Is freed by ipc_client_xdev_fini.
-		icx->all_input_pairs = U_TYPED_ARRAY_CALLOC(struct xrt_binding_input_pair, info.total_input_pair_count);
-		xret = ipc_receive(&ipc_c->imc, icx->all_input_pairs, size);
-		IPC_CHK_WITH_GOTO(ipc_c, xret, "ipc_receive(input pairs)", out_free_and_unlock);
-	}
-
-	// Receive all output pairs from varlen data.
-	if (info.total_output_pair_count > 0) {
-		size_t size = sizeof(struct xrt_binding_output_pair) * info.total_output_pair_count;
-
-		// Is freed by ipc_client_xdev_fini.
-		icx->all_output_pairs =
-		    U_TYPED_ARRAY_CALLOC(struct xrt_binding_output_pair, info.total_output_pair_count);
-		xret = ipc_receive(&ipc_c->imc, icx->all_output_pairs, size);
-		IPC_CHK_WITH_GOTO(ipc_c, xret, "ipc_receive(output pairs)", out_free_and_unlock);
-	}
-
-	// Setup binding profiles.
-	icx->base.binding_profile_count = info.binding_profile_count;
-	if (info.binding_profile_count > 0) {
-		// Is freed by ipc_client_xdev_fini.
-		icx->base.binding_profiles =
-		    U_TYPED_ARRAY_CALLOC(struct xrt_binding_profile, info.binding_profile_count);
-	}
-
-	// Wire up binding profiles with received pairs
-	uint32_t input_pair_offset = 0;
-	uint32_t output_pair_offset = 0;
-	for (size_t i = 0; i < info.binding_profile_count; i++) {
-		struct xrt_binding_profile *xbp = &icx->base.binding_profiles[i];
-		struct ipc_binding_profile_info *ibpi = &temp_ibpis[i];
-
-		xbp->name = ibpi->name;
-		xbp->input_count = ibpi->input_count;
-		xbp->output_count = ibpi->output_count;
-
-		// Point to the appropriate section of the received arrays.
-		if (ibpi->input_count > 0) {
-			xbp->inputs = &icx->all_input_pairs[input_pair_offset];
-			input_pair_offset += ibpi->input_count;
-		} else {
-			xbp->inputs = NULL;
-		}
-
-		// Ditto for outputs.
-		if (ibpi->output_count > 0) {
-			xbp->outputs = &icx->all_output_pairs[output_pair_offset];
-			output_pair_offset += ibpi->output_count;
-		} else {
-			xbp->outputs = NULL;
-		}
-	}
-
 out_free_and_unlock:
 	// Out of the critical section.
 	ipc_client_connection_unlock(ipc_c);
-
-	// Free temporary binding profile structures (we've copied the data).
-	free(temp_ibpis);
 
 	// Check if we failed during the critical section.
 	IPC_CHK_WITH_GOTO(ipc_c, xret, "ipc_client_xdev_init(failed during critical section)", err_fini);
@@ -671,21 +595,5 @@ ipc_client_xdev_fini(struct ipc_client_xdev *icx)
 	if (icx->base.outputs != NULL) {
 		free(icx->base.outputs);
 		icx->base.outputs = NULL;
-	}
-
-	// Free binding profiles.
-	if (icx->base.binding_profiles != NULL) {
-		free(icx->base.binding_profiles);
-		icx->base.binding_profiles = NULL;
-	}
-
-	if (icx->all_input_pairs != NULL) {
-		free(icx->all_input_pairs);
-		icx->all_input_pairs = NULL;
-	}
-
-	if (icx->all_output_pairs != NULL) {
-		free(icx->all_output_pairs);
-		icx->all_output_pairs = NULL;
 	}
 }

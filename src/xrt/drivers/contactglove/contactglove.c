@@ -937,9 +937,6 @@ contactglove_create_glove(struct contactglove_dongle *dongle,
 
 	contactglove_calibration_wizard_init(&glove->calibration_wizard, glove);
 
-	glove->base.binding_profiles = binding_profiles_magnetra2;
-	glove->base.binding_profile_count = ARRAY_SIZE(binding_profiles_magnetra2);
-
 	switch (hand) {
 	case XRT_HAND_RIGHT: {
 		glove->base.device_type = XRT_DEVICE_TYPE_RIGHT_HAND_CONTROLLER;

@@ -62,8 +62,6 @@ struct InputClass
 	xrt_device_name name;
 	const std::vector<xrt_input_name> poses;
 	const std::unordered_map<std::string_view, xrt_input_name> non_poses;
-	//! Other interaction profiles this device can be bound as.
-	std::span<xrt_binding_profile> binding_profiles{};
 };
 
 namespace {
@@ -222,24 +220,6 @@ const std::unordered_map<std::string_view, InputClass> controller_classes{
     },
 };
 
-// The VP2 exposes its buttons with the same names as the Vive Pro, so this is an identity mapping.
-xrt_binding_input_pair vive_pro_inputs_vp2[] = {
-    {XRT_INPUT_VIVE_PRO_SYSTEM_CLICK, XRT_INPUT_VIVE_PRO_SYSTEM_CLICK},
-    {XRT_INPUT_VIVE_PRO_VOLUP_CLICK, XRT_INPUT_VIVE_PRO_VOLUP_CLICK},
-    {XRT_INPUT_VIVE_PRO_VOLDN_CLICK, XRT_INPUT_VIVE_PRO_VOLDN_CLICK},
-    {XRT_INPUT_VIVE_PRO_MUTE_MIC_CLICK, XRT_INPUT_VIVE_PRO_MUTE_MIC_CLICK},
-};
-
-xrt_binding_profile vp2_binding_profiles[] = {
-    {
-        .name = XRT_DEVICE_VIVE_PRO,
-        .inputs = vive_pro_inputs_vp2,
-        .input_count = std::size(vive_pro_inputs_vp2),
-        .outputs = nullptr,
-        .output_count = 0,
-    },
-};
-
 // Used for any HMD that isn't in hmd_classes.
 const InputClass generic_hmd_class{
     XRT_DEVICE_GENERIC_HMD,
@@ -270,7 +250,6 @@ const std::unordered_map<VIVE_VARIANT, InputClass> hmd_classes{
                 {"/input/volume_down/click", XRT_INPUT_VIVE_PRO_VOLDN_CLICK},
                 {"/input/mute_mic/click", XRT_INPUT_VIVE_PRO_MUTE_MIC_CLICK},
             },
-            vp2_binding_profiles,
         },
     },
 };
@@ -445,9 +424,6 @@ Device::set_input_class(const InputClass *input_class)
 
 	this->inputs = inputs_vec.data();
 	this->input_count = inputs_vec.size();
-
-	this->binding_profiles = input_class->binding_profiles.data();
-	this->binding_profile_count = input_class->binding_profiles.size();
 }
 
 xrt_hand

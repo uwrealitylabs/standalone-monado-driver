@@ -19,8 +19,6 @@
 #include "util/u_device.h"
 #include "util/u_time.h"
 
-#include "vive/vive_bindings.h"
-
 #include "math/m_api.h"
 
 #include "openvr_driver.h"
@@ -358,15 +356,6 @@ Context::setup_controller(const char *serial, vr::ITrackedDeviceServerDriver *dr
 	if (err != vr::VRInitError_None) {
 		CTX_ERR("Activating controller failed: error %u", err);
 		return false;
-	}
-
-	enum xrt_device_name name = device->name;
-	switch (name) {
-	case XRT_DEVICE_FLIPVR:
-		device->binding_profiles = vive_binding_profiles_flipvr;
-		device->binding_profile_count = vive_binding_profiles_flipvr_count;
-		break;
-	default: break;
 	}
 
 	return true;

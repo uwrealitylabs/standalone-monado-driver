@@ -323,30 +323,6 @@ daydream_device_get_tracked_pose(struct xrt_device *xdev,
 
 /*
  *
- * Bindings
- *
- */
-
-static struct xrt_binding_input_pair simple_inputs[4] = {
-    {XRT_INPUT_SIMPLE_SELECT_CLICK, XRT_INPUT_DAYDREAM_BAR_CLICK},
-    {XRT_INPUT_SIMPLE_MENU_CLICK, XRT_INPUT_DAYDREAM_CIRCLE_CLICK},
-    {XRT_INPUT_SIMPLE_GRIP_POSE, XRT_INPUT_DAYDREAM_POSE},
-    {XRT_INPUT_SIMPLE_AIM_POSE, XRT_INPUT_DAYDREAM_POSE},
-};
-
-static struct xrt_binding_profile binding_profiles[1] = {
-    {
-        .name = XRT_DEVICE_SIMPLE_CONTROLLER,
-        .inputs = simple_inputs,
-        .input_count = ARRAY_SIZE(simple_inputs),
-        .outputs = NULL,
-        .output_count = 0,
-    },
-};
-
-
-/*
- *
  * Prober functions.
  *
  */
@@ -368,8 +344,6 @@ daydream_device_create(struct os_ble_device *ble)
 	dd->base.inputs[DAYDREAM_VOLUP_CLICK].name = XRT_INPUT_DAYDREAM_VOLUP_CLICK;
 	dd->base.inputs[DAYDREAM_VOLDN_CLICK].name = XRT_INPUT_DAYDREAM_VOLDN_CLICK;
 	dd->base.inputs[DAYDREAM_TOUCHPAD].name = XRT_INPUT_DAYDREAM_TOUCHPAD;
-	dd->base.binding_profiles = binding_profiles;
-	dd->base.binding_profile_count = ARRAY_SIZE(binding_profiles);
 
 	static int controller_num = 0;
 	snprintf(dd->base.str, XRT_DEVICE_NAME_LEN, "Daydream");

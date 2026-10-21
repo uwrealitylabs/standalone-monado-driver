@@ -456,22 +456,6 @@ cemu_device_update_inputs(struct xrt_device *xdev)
 	return XRT_SUCCESS;
 }
 
-static struct xrt_binding_input_pair simple_inputs[3] = {
-    {XRT_INPUT_SIMPLE_SELECT_CLICK, XRT_INPUT_HAND_CTRL_EMU_PINCH_BOOL},
-    {XRT_INPUT_SIMPLE_GRIP_POSE, XRT_INPUT_HAND_CTRL_EMU_GRIP_POSE},
-    {XRT_INPUT_SIMPLE_AIM_POSE, XRT_INPUT_HAND_CTRL_EMU_AIM_POSE},
-};
-
-static struct xrt_binding_profile binding_profiles[1] = {
-    {
-        .name = XRT_DEVICE_SIMPLE_CONTROLLER,
-        .inputs = simple_inputs,
-        .input_count = ARRAY_SIZE(simple_inputs),
-        .outputs = nullptr,
-        .output_count = 0,
-    },
-};
-
 extern "C" int
 cemu_devices_create(struct xrt_device *head, struct xrt_device *hands, struct xrt_device **out_xdevs)
 {
@@ -508,8 +492,6 @@ cemu_devices_create(struct xrt_device *head, struct xrt_device *hands, struct xr
 		cemud[i]->base.supported.hand_tracking = true;
 		cemud[i]->base.supported.orientation_tracking = true;
 		cemud[i]->base.supported.position_tracking = true;
-		cemud[i]->base.binding_profiles = binding_profiles;
-		cemud[i]->base.binding_profile_count = ARRAY_SIZE(binding_profiles);
 
 		cemud[i]->base.inputs[CEMU_INDEX_HAND_TRACKING].name = ht_input_names[i];
 		cemud[i]->base.inputs[CEMU_INDEX_PINCH_BOOL].name = XRT_INPUT_HAND_CTRL_EMU_PINCH_BOOL;

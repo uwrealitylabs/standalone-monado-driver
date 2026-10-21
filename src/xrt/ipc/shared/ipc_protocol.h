@@ -141,9 +141,6 @@ struct ipc_device_list
  * Followed by varlen data containing:
  * - An array of input_count * enum xrt_input_name
  * - An array of output_count * enum xrt_output_name
- * - An array of binding_profile_count * struct ipc_binding_profile_info
- * - An array of total_input_pair_count * struct xrt_binding_input_pair
- * - An array of total_output_pair_count * struct xrt_binding_output_pair
  *
  * @ingroup ipc
  */
@@ -170,15 +167,6 @@ struct ipc_device_info
 	//! A unique identifier. Persistent across configurations, if possible.
 	char serial[XRT_DEVICE_NAME_LEN];
 
-	//! Number of binding profiles in varlen data.
-	uint32_t binding_profile_count;
-
-	//! Total number of input pairs in varlen data (across all binding profiles).
-	uint32_t total_input_pair_count;
-
-	//! Total number of output pairs in varlen data (across all binding profiles).
-	uint32_t total_output_pair_count;
-
 	//! Number of inputs.
 	uint32_t input_count;
 
@@ -187,26 +175,6 @@ struct ipc_device_info
 
 	//! The supported fields.
 	struct xrt_device_supported supported;
-};
-
-/*!
- * A binding in the shared memory area.
- *
- * @ingroup ipc
- */
-struct ipc_binding_profile_info
-{
-	enum xrt_device_name name;
-
-	//! Offset into the array of pairs where this input bindings starts.
-	uint32_t first_input_index;
-	//! Number of inputs.
-	uint32_t input_count;
-
-	//! Offset into the array of pairs where this output bindings starts.
-	uint32_t first_output_index;
-	//! Number of outputs.
-	uint32_t output_count;
 };
 
 /*!

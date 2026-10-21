@@ -15,7 +15,6 @@
 
 #include "rift_internal.h"
 #include "rift_radio.h"
-#include "rift_bindings.h"
 #include "rift_usb.h"
 
 #include <errno.h>
@@ -307,9 +306,6 @@ rift_remote_create(struct rift_hmd *hmd, struct xrt_frame_context *xfctx)
 	u_device_populate_function_pointers(&remote->base, rift_remote_get_tracked_pose, rift_remote_destroy);
 	remote->base.update_inputs = rift_remote_update_inputs;
 
-	remote->base.binding_profiles = remote_profile_bindings;
-	remote->base.binding_profile_count = remote_profile_bindings_count;
-
 	u_var_add_root(remote, "Rift Remote", true);
 	u_var_add_ro_u32(remote, (uint32_t *)&remote->buttons, "buttons");
 
@@ -400,9 +396,6 @@ rift_touch_controller_create(struct rift_hmd *hmd,
 
 	controller->base.supported.battery_status = true;
 	controller->base.supported.orientation_tracking = true;
-
-	controller->base.binding_profile_count = touch_profile_bindings_count;
-	controller->base.binding_profiles = touch_profile_bindings;
 
 	result = os_mutex_init(&controller->input.mutex);
 	if (result < 0) {

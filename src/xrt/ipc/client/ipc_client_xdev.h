@@ -43,9 +43,6 @@ struct ipc_client_xdev
 	 * the service via @ref ipc_device_info.
 	 */
 	uint32_t device_id;
-
-	struct xrt_binding_input_pair *all_input_pairs;
-	struct xrt_binding_output_pair *all_output_pairs;
 };
 
 /*!

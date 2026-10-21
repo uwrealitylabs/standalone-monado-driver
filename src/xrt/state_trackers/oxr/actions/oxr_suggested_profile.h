@@ -59,7 +59,7 @@ struct oxr_suggested_profile
 	//! Interaction profile path this suggestion set is for.
 	XrPath path;
 
-	//! Used to lookup @ref xrt_binding_profile for fallback.
+	//! Generated interaction profile template for this suggestion.
 	const struct oxr_profile_template *templ;
 
 	//! Client-suggested action-to-path bindings for this profile.
