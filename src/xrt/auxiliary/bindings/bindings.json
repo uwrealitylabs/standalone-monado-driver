@@ -1334,7 +1334,7 @@
 					"localized_name": "Thumb",
 					"components": ["proximity"],
 					"monado_bindings": {
-						"force": "XRT_INPUT_TOUCH_THUMB_PROXIMITY"
+						"proximity": "XRT_INPUT_TOUCH_THUMB_PROXIMITY"
 					}
 				},
 				"/input/grip": {
