@@ -3341,9 +3341,9 @@
 					"monado_bindings": {
 						"touch": "XRT_INPUT_TOUCH_PRO_TRIGGER_TOUCH",
 						"value": "XRT_INPUT_TOUCH_PRO_TRIGGER_VALUE",
-						"curl": "XRT_INPUT_TOUCH_PRO_TRIGGER_CURL",
-						"slide": "XRT_INPUT_TOUCH_PRO_TRIGGER_SLIDE",
-						"proximity": "XRT_INPUT_TOUCH_PRO_TRIGGER_PROXIMITY"
+						"curl_fb": "XRT_INPUT_TOUCH_PRO_TRIGGER_CURL",
+						"slide_fb": "XRT_INPUT_TOUCH_PRO_TRIGGER_SLIDE",
+						"proximity_fb": "XRT_INPUT_TOUCH_PRO_TRIGGER_PROXIMITY"
 					}
 				},
 				"/input/thumbstick": {
@@ -3382,7 +3382,7 @@
 					"localized_name": "Thumb",
 					"components": ["proximity_fb"],
 					"monado_bindings": {
-						"force": "XRT_INPUT_TOUCH_PRO_THUMB_PROXIMITY"
+						"proximity_fb": "XRT_INPUT_TOUCH_PRO_THUMB_PROXIMITY"
 					}
 				},
 				"/input/grip": {
