@@ -11,15 +11,15 @@
 	"/helper/controller/simple_to_controller": {
 		"helper": true,
 		"helpers": [
-			"/helper/controller/output",
-			"/helper/controller/poses",
+			"/helper/controller/identity/output",
+			"/helper/controller/identity/poses",
 			"/helper/controller/simple_select_to_trigger"
 		]
 	},
 	"/helper/controller/simple_to_menu_controller": {
 		"helper": true,
 		"helpers": [
-			"/helper/controller/menu",
+			"/helper/controller/identity/menu",
 			"/helper/controller/simple_to_controller"
 		]
 	},

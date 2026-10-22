@@ -3,14 +3,14 @@
 		"source_profile": "/interaction_profiles/oculus/touch_controller",
 		"target_profile": "/interaction_profiles/hp/mixed_reality_controller",
 		"helpers": [
-			"/helper/controller/output",
-			"/helper/controller/poses",
-			"/helper/controller/squeeze",
-			"/helper/controller/thumbstick",
+			"/helper/controller/identity/output",
+			"/helper/controller/identity/poses",
+			"/helper/controller/identity/squeeze",
+			"/helper/controller/identity/thumbstick",
+			"/helper/controller/identity/trigger",
 			"/helper/controller/touch_no_proximity",
 			"/helper/controller/touch_no_thumbrest",
-			"/helper/controller/touch_trigger_touch_to_value",
-			"/helper/controller/trigger"
+			"/helper/controller/touch_trigger_touch_to_value"
 		],
 		"bindings": {
 			"/user/hand/left/input/menu": true,
@@ -37,12 +37,12 @@
 		"source_profile": "/interaction_profiles/oculus/touch_controller",
 		"target_profile": "/interaction_profiles/meta/touch_controller_rift_cv1",
 		"helpers": [
-			"/helper/controller/output",
-			"/helper/controller/poses",
-			"/helper/controller/squeeze",
-			"/helper/controller/thumbstick",
-			"/helper/controller/touch_abxy",
-			"/helper/controller/trigger"
+			"/helper/controller/identity/output",
+			"/helper/controller/identity/poses",
+			"/helper/controller/identity/squeeze",
+			"/helper/controller/identity/thumbstick",
+			"/helper/controller/identity/abxy",
+			"/helper/controller/identity/trigger"
 		],
 		"bindings": {
 			"/user/hand/left/input/menu": true,
@@ -69,13 +69,13 @@
 		"source_profile": "/interaction_profiles/oculus/touch_controller",
 		"target_profile": "/interaction_profiles/mndx/ball_on_a_stick_controller",
 		"helpers": [
-			"/helper/controller/output",
-			"/helper/controller/poses",
+			"/helper/controller/identity/output",
+			"/helper/controller/identity/poses",
+			"/helper/controller/identity/trigger",
 			"/helper/controller/touch_menu_to_system",
 			"/helper/controller/touch_no_proximity",
 			"/helper/controller/touch_no_thumbrest",
-			"/helper/controller/touch_trigger_touch_to_value",
-			"/helper/controller/trigger"
+			"/helper/controller/touch_trigger_touch_to_value"
 		],
 		"bindings": {
 			"/user/hand/left/input/squeeze": "/user/hand/left/input/start",
@@ -120,15 +120,15 @@
 		"source_profile": "/interaction_profiles/oculus/touch_controller",
 		"target_profile": "/interaction_profiles/mndx/flipvr",
 		"helpers": [
-			"/helper/controller/output",
-			"/helper/controller/poses",
-			"/helper/controller/squeeze",
+			"/helper/controller/identity/output",
+			"/helper/controller/identity/poses",
+			"/helper/controller/identity/squeeze",
+			"/helper/controller/identity/abxy",
+			"/helper/controller/identity/trigger",
 			"/helper/controller/thumbstick_to_joystick",
-			"/helper/controller/touch_abxy",
 			"/helper/controller/touch_menu_to_system",
 			"/helper/controller/touch_no_proximity",
-			"/helper/controller/touch_no_thumbrest",
-			"/helper/controller/trigger"
+			"/helper/controller/touch_no_thumbrest"
 		],
 		"bindings": {
 			"/user/hand/left/input/thumbstick/touch": "/user/hand/left/input/joystick/touch",
@@ -141,12 +141,12 @@
 		"source_profile": "/interaction_profiles/oculus/touch_controller",
 		"target_profile": "/interaction_profiles/mndx/hydra",
 		"helpers": [
-			"/helper/controller/poses",
-			"/helper/controller/thumbstick",
+			"/helper/controller/identity/poses",
+			"/helper/controller/identity/thumbstick",
+			"/helper/controller/identity/trigger",
 			"/helper/controller/touch_no_proximity",
 			"/helper/controller/touch_no_thumbrest",
-			"/helper/controller/touch_trigger_touch_to_value",
-			"/helper/controller/trigger"
+			"/helper/controller/touch_trigger_touch_to_value"
 		],
 		"bindings": {
 			"/user/hand/left/input/menu": false,
@@ -179,13 +179,13 @@
 		"source_profile": "/interaction_profiles/oculus/touch_controller",
 		"target_profile": "/interaction_profiles/mndx/pssense_controller_mndx",
 		"helpers": [
-			"/helper/controller/output",
-			"/helper/controller/poses",
+			"/helper/controller/identity/output",
+			"/helper/controller/identity/poses",
+			"/helper/controller/identity/thumbstick",
+			"/helper/controller/identity/trigger",
 			"/helper/controller/squeeze_click",
-			"/helper/controller/thumbstick",
 			"/helper/controller/touch_menu_to_system",
-			"/helper/controller/touch_no_thumbrest",
-			"/helper/controller/trigger"
+			"/helper/controller/touch_no_thumbrest"
 		],
 		"bindings": {
 			"/user/hand/left/input/thumb_fb/proximity_fb": false,

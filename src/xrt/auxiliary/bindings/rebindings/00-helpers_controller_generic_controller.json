@@ -15,12 +15,12 @@
 	"/helper/controller/generic_to_abab_controller": {
 		"helper": true,
 		"helpers": [
-			"/helper/controller/generic_primary_secondary_to_abab",
-			"/helper/controller/output",
-			"/helper/controller/poses",
-			"/helper/controller/squeeze",
-			"/helper/controller/thumbstick",
-			"/helper/controller/trigger"
+			"/helper/controller/identity/output",
+			"/helper/controller/identity/poses",
+			"/helper/controller/identity/squeeze",
+			"/helper/controller/identity/thumbstick",
+			"/helper/controller/identity/trigger",
+			"/helper/controller/generic_primary_secondary_to_abab"
 		]
 	},
 	"/helper/controller/generic_primary_secondary_to_abxy": {
@@ -39,12 +39,12 @@
 	"/helper/controller/generic_to_abxy_controller": {
 		"helper": true,
 		"helpers": [
-			"/helper/controller/generic_primary_secondary_to_abxy",
-			"/helper/controller/output",
-			"/helper/controller/poses",
-			"/helper/controller/squeeze",
-			"/helper/controller/thumbstick",
-			"/helper/controller/trigger"
+			"/helper/controller/identity/output",
+			"/helper/controller/identity/poses",
+			"/helper/controller/identity/squeeze",
+			"/helper/controller/identity/thumbstick",
+			"/helper/controller/identity/trigger",
+			"/helper/controller/generic_primary_secondary_to_abxy"
 		]
 	}
 }
