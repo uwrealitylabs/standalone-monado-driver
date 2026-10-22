@@ -3706,9 +3706,9 @@
 						"touch": "XRT_INPUT_TOUCH_PLUS_TRIGGER_TOUCH",
 						"value": "XRT_INPUT_TOUCH_PLUS_TRIGGER_VALUE",
 						"force": "XRT_INPUT_TOUCH_PLUS_TRIGGER_FORCE",
-						"curl": "XRT_INPUT_TOUCH_PLUS_TRIGGER_CURL",
-						"slide": "XRT_INPUT_TOUCH_PLUS_TRIGGER_SLIDE",
-						"proximity": "XRT_INPUT_TOUCH_PLUS_TRIGGER_PROXIMITY"
+						"curl_meta": "XRT_INPUT_TOUCH_PLUS_TRIGGER_CURL",
+						"slide_meta": "XRT_INPUT_TOUCH_PLUS_TRIGGER_SLIDE",
+						"proximity_meta": "XRT_INPUT_TOUCH_PLUS_TRIGGER_PROXIMITY"
 					}
 				},
 				"/input/thumbstick": {
@@ -3738,7 +3738,7 @@
 					"localized_name": "Thumb",
 					"components": ["proximity_meta"],
 					"monado_bindings": {
-						"force": "XRT_INPUT_TOUCH_PLUS_THUMB_PROXIMITY"
+						"proximity_meta": "XRT_INPUT_TOUCH_PLUS_THUMB_PROXIMITY"
 					}
 				},
 				"/input/grip": {
