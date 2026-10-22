@@ -1,5 +1,5 @@
 {
-	"/helper/controller/touch_menu_to_system": {
+	"/helper/controller/touch/menu_to_system": {
 		"helper": true,
 		"bindings": {
 			"/user/hand/left/input/menu": "/user/hand/left/input/system",
@@ -8,7 +8,7 @@
 			"/user/hand/right/input/system/click": true
 		}
 	},
-	"/helper/controller/touch_no_proximity": {
+	"/helper/controller/touch/no_proximity": {
 		"helper": true,
 		"bindings": {
 			"/user/hand/left/input/thumb_fb/proximity_fb": false,
@@ -21,14 +21,14 @@
 			"/user/hand/right/input/trigger/proximity_fb": false
 		}
 	},
-	"/helper/controller/touch_no_thumbrest": {
+	"/helper/controller/touch/no_thumbrest": {
 		"helper": true,
 		"bindings": {
 			"/user/hand/left/input/thumbrest/touch": false,
 			"/user/hand/right/input/thumbrest/touch": false
 		}
 	},
-	"/helper/controller/touch_trigger_touch_to_value": {
+	"/helper/controller/touch/trigger_touch_to_value": {
 		"helper": true,
 		"bindings": {
 			"/user/hand/left/input/trigger/touch": "/user/hand/left/input/trigger/value",

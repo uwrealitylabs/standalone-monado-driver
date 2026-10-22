@@ -1,5 +1,5 @@
 {
-	"/helper/controller/squeeze_click": {
+	"/helper/controller/transform/squeeze_click": {
 		"helper": true,
 		"bindings": {
 			"/user/hand/left/input/squeeze": true,
@@ -8,7 +8,7 @@
 			"/user/hand/right/input/squeeze/value": "/user/hand/right/input/squeeze/click"
 		}
 	},
-	"/helper/controller/thumbstick_to_joystick": {
+	"/helper/controller/transform/thumbstick_to_joystick": {
 		"helper": true,
 		"bindings": {
 			"/user/hand/left/input/thumbstick": "/user/hand/left/input/joystick",
@@ -31,7 +31,7 @@
 			"/user/hand/right/input/thumbstick/y": "/user/hand/right/input/joystick/y"
 		}
 	},
-	"/helper/controller/thumbstick_to_trackpad": {
+	"/helper/controller/transform/thumbstick_to_trackpad": {
 		"helper": true,
 		"bindings": {
 			"/user/hand/left/input/thumbstick": "/user/hand/left/input/trackpad",

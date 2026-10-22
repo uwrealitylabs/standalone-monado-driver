@@ -8,9 +8,9 @@
 			"/helper/controller/identity/squeeze",
 			"/helper/controller/identity/thumbstick",
 			"/helper/controller/identity/trigger",
-			"/helper/controller/touch_no_proximity",
-			"/helper/controller/touch_no_thumbrest",
-			"/helper/controller/touch_trigger_touch_to_value"
+			"/helper/controller/touch/no_proximity",
+			"/helper/controller/touch/no_thumbrest",
+			"/helper/controller/touch/trigger_touch_to_value"
 		],
 		"bindings": {
 			"/user/hand/left/input/menu": true,
@@ -72,10 +72,10 @@
 			"/helper/controller/identity/output",
 			"/helper/controller/identity/poses",
 			"/helper/controller/identity/trigger",
-			"/helper/controller/touch_menu_to_system",
-			"/helper/controller/touch_no_proximity",
-			"/helper/controller/touch_no_thumbrest",
-			"/helper/controller/touch_trigger_touch_to_value"
+			"/helper/controller/touch/menu_to_system",
+			"/helper/controller/touch/no_proximity",
+			"/helper/controller/touch/no_thumbrest",
+			"/helper/controller/touch/trigger_touch_to_value"
 		],
 		"bindings": {
 			"/user/hand/left/input/squeeze": "/user/hand/left/input/start",
@@ -125,10 +125,10 @@
 			"/helper/controller/identity/squeeze",
 			"/helper/controller/identity/abxy",
 			"/helper/controller/identity/trigger",
-			"/helper/controller/thumbstick_to_joystick",
-			"/helper/controller/touch_menu_to_system",
-			"/helper/controller/touch_no_proximity",
-			"/helper/controller/touch_no_thumbrest"
+			"/helper/controller/transform/thumbstick_to_joystick",
+			"/helper/controller/touch/menu_to_system",
+			"/helper/controller/touch/no_proximity",
+			"/helper/controller/touch/no_thumbrest"
 		],
 		"bindings": {
 			"/user/hand/left/input/thumbstick/touch": "/user/hand/left/input/joystick/touch",
@@ -144,9 +144,9 @@
 			"/helper/controller/identity/poses",
 			"/helper/controller/identity/thumbstick",
 			"/helper/controller/identity/trigger",
-			"/helper/controller/touch_no_proximity",
-			"/helper/controller/touch_no_thumbrest",
-			"/helper/controller/touch_trigger_touch_to_value"
+			"/helper/controller/touch/no_proximity",
+			"/helper/controller/touch/no_thumbrest",
+			"/helper/controller/touch/trigger_touch_to_value"
 		],
 		"bindings": {
 			"/user/hand/left/input/menu": false,
@@ -183,9 +183,9 @@
 			"/helper/controller/identity/poses",
 			"/helper/controller/identity/thumbstick",
 			"/helper/controller/identity/trigger",
-			"/helper/controller/squeeze_click",
-			"/helper/controller/touch_menu_to_system",
-			"/helper/controller/touch_no_thumbrest"
+			"/helper/controller/transform/squeeze_click",
+			"/helper/controller/touch/menu_to_system",
+			"/helper/controller/touch/no_thumbrest"
 		],
 		"bindings": {
 			"/user/hand/left/input/thumb_fb/proximity_fb": false,

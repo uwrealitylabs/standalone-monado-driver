@@ -55,32 +55,32 @@
 	"simple_to_mixed_reality_controller": {
 		"source_profile": "/interaction_profiles/khr/simple_controller",
 		"target_profile": "/interaction_profiles/hp/mixed_reality_controller",
-		"helpers": ["/helper/controller/simple_to_menu_controller"]
+		"helpers": ["/helper/controller/simple/to_menu_controller"]
 	},
 	"simple_to_touch_controller_rift_cv1": {
 		"source_profile": "/interaction_profiles/khr/simple_controller",
 		"target_profile": "/interaction_profiles/meta/touch_controller_rift_cv1",
-		"helpers": ["/helper/controller/simple_to_left_menu_controller"]
+		"helpers": ["/helper/controller/simple/to_left_menu_controller"]
 	},
 	"simple_to_motion_controller": {
 		"source_profile": "/interaction_profiles/khr/simple_controller",
 		"target_profile": "/interaction_profiles/microsoft/motion_controller",
-		"helpers": ["/helper/controller/simple_to_menu_controller"]
+		"helpers": ["/helper/controller/simple/to_menu_controller"]
 	},
 	"simple_to_ml2_controller": {
 		"source_profile": "/interaction_profiles/khr/simple_controller",
 		"target_profile": "/interaction_profiles/ml/ml2_controller",
-		"helpers": ["/helper/controller/simple_to_menu_controller"]
+		"helpers": ["/helper/controller/simple/to_menu_controller"]
 	},
 	"simple_to_ball_on_a_stick_controller": {
 		"source_profile": "/interaction_profiles/khr/simple_controller",
 		"target_profile": "/interaction_profiles/mndx/ball_on_a_stick_controller",
-		"helpers": ["/helper/controller/simple_to_menu_controller"]
+		"helpers": ["/helper/controller/simple/to_menu_controller"]
 	},
 	"simple_to_flipvr": {
 		"source_profile": "/interaction_profiles/khr/simple_controller",
 		"target_profile": "/interaction_profiles/mndx/flipvr",
-		"helpers": ["/helper/controller/simple_to_controller"],
+		"helpers": ["/helper/controller/simple/to_controller"],
 		"bindings": {
 			"/user/hand/left/input/menu": false,
 			"/user/hand/left/input/menu/click": false,
@@ -93,7 +93,7 @@
 		"target_profile": "/interaction_profiles/mndx/hydra",
 		"helpers": [
 			"/helper/controller/identity/poses",
-			"/helper/controller/simple_select_to_trigger"
+			"/helper/controller/simple/select_to_trigger"
 		],
 		"bindings": {
 			"/user/hand/left/input/menu": false,
@@ -107,7 +107,7 @@
 	"simple_to_pssense_controller_mndx": {
 		"source_profile": "/interaction_profiles/khr/simple_controller",
 		"target_profile": "/interaction_profiles/mndx/pssense_controller_mndx",
-		"helpers": ["/helper/controller/simple_to_controller"],
+		"helpers": ["/helper/controller/simple/to_controller"],
 		"bindings": {
 			"/user/hand/left/input/menu": false,
 			"/user/hand/left/input/menu/click": false,
@@ -118,11 +118,11 @@
 	"simple_to_touch_controller": {
 		"source_profile": "/interaction_profiles/khr/simple_controller",
 		"target_profile": "/interaction_profiles/oculus/touch_controller",
-		"helpers": ["/helper/controller/simple_to_left_menu_controller"]
+		"helpers": ["/helper/controller/simple/to_left_menu_controller"]
 	},
 	"simple_to_odyssey_controller": {
 		"source_profile": "/interaction_profiles/khr/simple_controller",
 		"target_profile": "/interaction_profiles/samsung/odyssey_controller",
-		"helpers": ["/helper/controller/simple_to_menu_controller"]
+		"helpers": ["/helper/controller/simple/to_menu_controller"]
 	}
 }
