@@ -1147,14 +1147,15 @@ oxr_system_enumerate_view_conf_views(struct oxr_logger *log,
 XRT_CHECK_RESULT XrResult
 oxr_system_poll(struct oxr_logger *log, struct oxr_system *sys)
 {
-	// @todo: OXR_CHECK_XRET expects a session, and we need to give it *something*,
-	//        give it the first (or none) for now.
-	struct oxr_session *sess = sys->inst->sessions;
-
-	// Do nothing until we have a system.
+	// Do nothing until we have a system, sys->inst is not set until then.
 	if (!sys->xasys) {
 		return XR_SUCCESS;
 	}
+
+	//! @todo: OXR_CHECK_XRET expects a session, and we need to give it *something*,
+	//         give it the first (or none) for now.
+	//! @note: Locked externally by the caller.
+	struct oxr_session *sess = sys->inst->sessions_locked;
 
 	xrt_result_t xret;
 

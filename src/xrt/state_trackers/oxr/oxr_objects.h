@@ -1203,7 +1203,10 @@ struct oxr_instance
 		struct oxr_event *next;
 	} event;
 
-	struct oxr_session *sessions;
+	//! Protects the sessions list @ref sessions_locked, taken before the event mutex.
+	struct os_mutex sessions_mutex;
+	//! The session list, protected by @ref sessions_mutex
+	struct oxr_session *sessions_locked;
 
 	//! Path cache for actions, needs path_store to work.
 	struct oxr_instance_path_cache path_cache;

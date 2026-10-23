@@ -103,6 +103,7 @@ oxr_instance_destroy(struct oxr_logger *log, struct oxr_handle_base *hb)
 	}
 
 	os_mutex_destroy(&inst->system_init_lock);
+	os_mutex_destroy(&inst->sessions_mutex);
 
 	if (inst->system.view_config_mutex_created) {
 		os_mutex_destroy(&inst->system.view_config_mutex);
@@ -298,6 +299,12 @@ oxr_instance_create(struct oxr_logger *log,
 	m_ret = os_mutex_init(&inst->system_init_lock);
 	if (m_ret < 0) {
 		ret = oxr_error(log, XR_ERROR_RUNTIME_FAILURE, "Failed to init system init mutex");
+		return ret;
+	}
+
+	m_ret = os_mutex_init(&inst->sessions_mutex);
+	if (m_ret < 0) {
+		ret = oxr_error(log, XR_ERROR_RUNTIME_FAILURE, "Failed to init sessions mutex");
 		return ret;
 	}
 

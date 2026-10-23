@@ -450,21 +450,26 @@ oxr_event_remove_session_events(struct oxr_logger *log, struct oxr_session *sess
 XrResult
 oxr_poll_event(struct oxr_logger *log, struct oxr_instance *inst, XrEventDataBuffer *eventData)
 {
-	struct oxr_session *sess = inst->sessions;
 	XrResult ret;
 
+	// Sessions can be created and destroyed on other threads while we poll.
+	os_mutex_lock(&inst->sessions_mutex);
+
+	// The system is lazily created by xrGetSystem, which may be running on another thread.
+	os_mutex_lock(&inst->system_init_lock);
 	ret = oxr_system_poll(log, &inst->system);
-	if (ret != XR_SUCCESS) {
-		return ret;
+	os_mutex_unlock(&inst->system_init_lock);
+
+	struct oxr_session *sess = inst->sessions_locked;
+	while (ret == XR_SUCCESS && sess) {
+		ret = oxr_session_poll(log, sess);
+		sess = sess->next;
 	}
 
-	while (sess) {
-		ret = oxr_session_poll(log, sess);
-		if (ret != XR_SUCCESS) {
-			return ret;
-		}
+	os_mutex_unlock(&inst->sessions_mutex);
 
-		sess = sess->next;
+	if (ret != XR_SUCCESS) {
+		return ret;
 	}
 
 	lock(inst);
