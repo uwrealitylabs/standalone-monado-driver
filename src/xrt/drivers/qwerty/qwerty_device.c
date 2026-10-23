@@ -345,6 +345,12 @@ qwerty_controller_create(bool is_left, struct qwerty_hmd *qhmd)
 	xd->inputs[QWERTY_AIM].name = XRT_INPUT_WMR_AIM_POSE;
 	xd->outputs[QWERTY_VIBRATION].name = XRT_OUTPUT_NAME_WMR_HAPTIC;
 
+	/*
+	 * @todo Restore the ability to test the Logitech MX Ink controller from qwerty.
+	 * The legacy binding profile that mapped MX Ink onto this WMR controller was
+	 * removed with xrt_binding_profile.
+	 */
+
 	xd->update_inputs = qwerty_update_inputs;
 	xd->get_tracked_pose = qwerty_get_tracked_pose;
 	xd->set_output = qwerty_set_output;
