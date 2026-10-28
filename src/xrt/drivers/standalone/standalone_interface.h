@@ -3,8 +3,7 @@
 /*!
  * @file
  * @brief  Interface to Standalone HMD driver.
- * @author Jakob Bornecrantz <jakob@collabora.com>
- * @author Rylie Pavlik <rylie.pavlik@collabora.com>
+ * @author Nathaniel Reilly <nathanmreilly@gmail.com>
  * @ingroup drv_standalone
  */
 

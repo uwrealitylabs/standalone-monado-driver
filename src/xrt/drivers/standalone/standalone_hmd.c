@@ -7,8 +7,7 @@
  *
  * Based largely on sample_hmd.c and simulated_hmd.c
  *
- * @author Jakob Bornecrantz <jakob@collabora.com>
- * @author Rylie Pavlik <rylie.pavlik@collabora.com>
+ * @author Nathaniel Reilly <nathanmreilly@gmail.com>
  * @ingroup drv_standalone
  */
 
