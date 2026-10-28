@@ -2,10 +2,10 @@
 // SPDX-License-Identifier: BSL-1.0
 /*!
  * @file
- * @brief  Sample HMD device, use as a starting point to make your own device driver.
+ * @brief  Standalone HMD device.
  *
  *
- * Based largely on simulated_hmd.c
+ * Based largely on sample_hmd.c and simulated_hmd.c
  *
  * @author Jakob Bornecrantz <jakob@collabora.com>
  * @author Rylie Pavlik <rylie.pavlik@collabora.com>
@@ -196,8 +196,8 @@ standalone_create(void)
 	hmd->log_level = debug_get_log_option_standalone_log();
 
 	// Print name.
-	snprintf(hmd->base.str, XRT_DEVICE_NAME_LEN, "Sample HMD");
-	snprintf(hmd->base.serial, XRT_DEVICE_NAME_LEN, "Sample HMD S/N");
+	snprintf(hmd->base.str, XRT_DEVICE_NAME_LEN, "Standalone HMD");
+	snprintf(hmd->base.serial, XRT_DEVICE_NAME_LEN, "Standalone HMD S/N");
 
 	m_relation_history_create(&hmd->relation_hist);
 
@@ -262,7 +262,7 @@ standalone_create(void)
 	m_relation_history_push(hmd->relation_hist, &identity, now);
 
 	// Setup variable tracker: Optional but useful for debugging
-	u_var_add_root(hmd, "Sample HMD", true);
+	u_var_add_root(hmd, "Standalone HMD", true);
 	u_var_add_log_level(hmd, &hmd->log_level, "log_level");
 
 

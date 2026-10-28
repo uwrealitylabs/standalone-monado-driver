@@ -20,7 +20,7 @@
 #include "target_builder_helpers.h"
 #include "target_builder_interface.h"
 
-#include "standalone/sample_interface.h"
+#include "standalone/standalone_interface.h"
 
 #include <assert.h>
 
@@ -49,8 +49,9 @@ standalone_estimate_system(struct xrt_builder *xb,
                           struct xrt_builder_estimate *estimate)
 {
 	estimate->certain.head = true;
-	estimate->certain.left = true;
-	estimate->certain.right = true;
+	//! @todo Set left and right to true once hand devices are created.
+	estimate->certain.left = false;
+	estimate->certain.right = false;
 	estimate->priority = 1;
 
 	return XRT_SUCCESS;

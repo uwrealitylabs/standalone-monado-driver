@@ -471,8 +471,7 @@ endif()
 
 if(XRT_BUILD_DRIVER_STANDALONE)
 	add_library(
-		drv_standalone STATIC standalone/sample_hmd.c standalone/sample_interface.h
-				  standalone/sample_prober.c
+		drv_standalone STATIC standalone/standalone_hmd.c standalone/standalone_interface.h
 		)
 	target_link_libraries(drv_standalone PRIVATE xrt-interfaces aux_util)
 	list(APPEND ENABLED_DRIVERS standalone)

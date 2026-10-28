@@ -24,10 +24,6 @@
 #include "contactglove/contactglove_interface.h"
 #endif
 
-#ifdef XRT_BUILD_DRIVER_STANDALONE
-#include "standalone/sample_interface.h"
-#endif
-
 #ifdef XRT_BUILD_DRIVER_SIMULATED
 #include "simulated/simulated_interface.h"
 #endif
@@ -269,10 +265,6 @@ xrt_auto_prober_create_func_t target_auto_list[] = {
 
 #ifdef XRT_BUILD_DRIVER_EUROC
     euroc_create_auto_prober,
-#endif
-
-#ifdef XRT_BUILD_DRIVER_STANDALONE
-    standalone_create_auto_prober,
 #endif
 
 #ifdef XRT_BUILD_DRIVER_SIMULATED
