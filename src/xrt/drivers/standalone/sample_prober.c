@@ -10,8 +10,9 @@
 #include "xrt/xrt_prober.h"
 
 #include "util/u_misc.h"
+#include "util/u_logging.h"
 
-#include "standalone_interface.h"
+#include "sample_interface.h"
 
 
 /*!
@@ -61,6 +62,8 @@ standalone_auto_prober_autoprobe(struct xrt_auto_prober *xap,
 struct xrt_auto_prober *
 standalone_create_auto_prober(void)
 {
+	U_LOG_I("standalone auto prober called!");
+
 	struct standalone_auto_prober *ap = U_TYPED_CALLOC(struct standalone_auto_prober);
 	ap->base.name = "Sample HMD Auto-Prober";
 	ap->base.destroy = standalone_auto_prober_destroy;

@@ -55,6 +55,10 @@ extern "C" {
 #define T_BUILDER_RIFT_S
 #endif
 
+#if defined(XRT_BUILD_DRIVER_STANDALONE) || defined(XRT_DOXYGEN)
+#define T_BUILDER_STANDALONE
+#endif
+
 #if defined(XRT_BUILD_DRIVER_PSMV) || defined(XRT_BUILD_DRIVER_PSVR) || defined(XRT_DOXYGEN)
 #define T_BUILDER_RGB_TRACKING
 #endif
@@ -132,6 +136,14 @@ rift_builder_create(void);
  */
 struct xrt_builder *
 rift_s_builder_create(void);
+#endif
+
+#ifdef T_BUILDER_STANDALONE
+/*!
+ * The Standalone driver builder
+ */
+struct xrt_builder *
+t_builder_standalone_create(void);
 #endif
 
 #ifdef T_BUILDER_QWERTY

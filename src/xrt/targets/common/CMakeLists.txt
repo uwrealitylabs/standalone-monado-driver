@@ -48,6 +48,10 @@ if(XRT_BUILD_DRIVER_RIFT_S)
 	target_sources(target_lists PRIVATE target_builder_rift_s.c)
 endif()
 
+if(XRT_BUILD_DRIVER_STANDALONE)
+	target_sources(target_lists PRIVATE target_builder_standalone.c)
+endif()
+
 if(XRT_BUILD_DRIVER_SURVIVE OR XRT_BUILD_DRIVER_VIVE)
 	target_sources(target_lists PRIVATE target_builder_lighthouse.c)
 endif()
@@ -188,6 +192,10 @@ endif()
 
 if(XRT_BUILD_DRIVER_ROKID)
 	target_link_libraries(target_lists PRIVATE drv_rokid)
+endif()
+
+if(XRT_BUILD_DRIVER_STANDALONE)
+	target_link_libraries(target_lists PRIVATE drv_standalone)
 endif()
 
 if(XRT_HAVE_V4L2)

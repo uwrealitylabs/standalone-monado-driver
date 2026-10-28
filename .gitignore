@@ -117,3 +117,6 @@ result/
 
 # Kotlin
 .kotlin
+
+# Ignore logs
+*.log

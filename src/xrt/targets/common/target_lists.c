@@ -24,6 +24,10 @@
 #include "contactglove/contactglove_interface.h"
 #endif
 
+#ifdef XRT_BUILD_DRIVER_STANDALONE
+#include "standalone/sample_interface.h"
+#endif
+
 #ifdef XRT_BUILD_DRIVER_SIMULATED
 #include "simulated/simulated_interface.h"
 #endif
@@ -131,6 +135,10 @@ xrt_builder_create_func_t target_builder_list[] = {
 #ifdef XRT_BUILD_DRIVER_RIFT_S
     rift_s_builder_create,
 #endif // XRT_BUILD_DRIVER_RIFT_S
+
+#ifdef XRT_BUILD_DRIVER_STANDALONE
+    t_builder_standalone_create,
+#endif
 
 #ifdef XRT_BUILD_DRIVER_PSVR2
     t_builder_psvr2_create,
@@ -261,6 +269,10 @@ xrt_auto_prober_create_func_t target_auto_list[] = {
 
 #ifdef XRT_BUILD_DRIVER_EUROC
     euroc_create_auto_prober,
+#endif
+
+#ifdef XRT_BUILD_DRIVER_STANDALONE
+    standalone_create_auto_prober,
 #endif
 
 #ifdef XRT_BUILD_DRIVER_SIMULATED
