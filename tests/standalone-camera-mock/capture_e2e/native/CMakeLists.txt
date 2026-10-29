@@ -1,0 +1,13 @@
+cmake_minimum_required(VERSION 3.20)
+project(wrl_capture_e2e LANGUAGES C CXX)
+set(CMAKE_CXX_STANDARD 17)
+enable_testing()
+add_subdirectory("../../pipeline_matrix/native" "${CMAKE_CURRENT_BINARY_DIR}/components")
+add_library(wrl_capture_e2e SHARED session.cpp)
+target_include_directories(wrl_capture_e2e PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}"
+ "${CMAKE_CURRENT_SOURCE_DIR}/../../pipeline_matrix/native" "${CMAKE_CURRENT_SOURCE_DIR}/../../capture_mock/native")
+target_link_libraries(wrl_capture_e2e PUBLIC wrl_pipeline_matrix wrl_mock_capture monado_queue)
+target_compile_options(wrl_capture_e2e PRIVATE -Wall -Wextra -Wpedantic)
+add_executable(capture_e2e_smoke smoke.cpp)
+target_link_libraries(capture_e2e_smoke PRIVATE wrl_capture_e2e)
+add_test(NAME native_capture_to_rgb_pairing COMMAND capture_e2e_smoke)
