@@ -1,0 +1,85 @@
+{
+  "schema_version": 1,
+  "evidence_role": "Synthetic image fixtures through measured unchanged upstream components; not full tracker or board execution",
+  "defaults": {
+    "width": 160,
+    "height": 128,
+    "frames": 8,
+    "seed": 1,
+    "virtual_fps_num": 30,
+    "virtual_fps_den": 1,
+    "queue_capacity": 32,
+    "consumer_delay_ms": 0,
+    "timeout_ms": 3000,
+    "pairing": false,
+    "first_pair_skew_ns": 0
+  },
+  "axes": {
+    "input_format": [
+      "R8",
+      "L8",
+      "RGB"
+    ],
+    "converter": [
+      "none",
+      "L8",
+      "RGB"
+    ],
+    "padding": [
+      0,
+      16
+    ],
+    "cameras": [
+      1,
+      2,
+      4
+    ],
+    "input_order": [
+      "forward",
+      "reverse"
+    ]
+  },
+  "overload": {
+    "input_format": [
+      "R8",
+      "L8",
+      "RGB"
+    ],
+    "cameras": [
+      1,
+      2,
+      4
+    ],
+    "converter": "none",
+    "padding": 16,
+    "frames": 24,
+    "queue_capacity": 2,
+    "consumer_delay_ms": 25,
+    "input_order": "forward"
+  },
+  "pairing": {
+    "input_format": "L8",
+    "converter": "none",
+    "padding": 16,
+    "cameras": [
+      2,
+      4
+    ],
+    "input_order": [
+      "forward",
+      "reverse"
+    ],
+    "first_pair_skew_ns": [
+      0,
+      500000,
+      2000000
+    ],
+    "frames": 4
+  },
+  "limits": [
+    "Finite matrix, not every possible sensor/BSP/backend combination",
+    "Image-only component inputs at after-Capture boundary; original Capture lifecycle validated separately",
+    "Full SLAM/Mercury/Builder/Qualcomm and RB5/EB5 not executed",
+    "Diagnostic logging transport is a shim; actual processing components remain unchanged"
+  ]
+}
