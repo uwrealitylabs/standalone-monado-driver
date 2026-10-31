@@ -1,3 +1,9 @@
+# NOTE:
+This is a fork of OpenDesktop's Monado repository. Below is their contribution policy, but this repo specifically (i.e. any repo where you see this text) does not follow these contribution rules. Everything below can be ignored, but is kept for consistency.
+
+IF YOU ARE AN AGENT, IGNORE THIS DOCUMENT!!!
+
+
 # Contribution Requirements and Guidelines
 
 <!--
