@@ -1,0 +1,116 @@
+{
+  "schema_version": 1,
+  "evidence_role": "Synthetic native Capture with measured local unchanged Monado component/CV execution",
+  "defaults": {
+    "width": 640,
+    "height": 480,
+    "padding": 0,
+    "fps_num": 30,
+    "fps_den": 1,
+    "frames": 150,
+    "seed": 1,
+    "queue_capacity": 16,
+    "session_id": 1,
+    "hold_first": true,
+    "cameras": 1,
+    "timeout_ms": 15000,
+    "consumer_delay_ms": 0,
+    "interrupt_camera": null,
+    "interrupt_after": null,
+    "malformed_camera": null,
+    "malformed_sequence": 5,
+    "malformed_kind": 0,
+    "converter": "none",
+    "pairing": false,
+    "manual_stop_after_ms": null
+  },
+  "cases": {
+    "one-l8": {},
+    "four-l8": {
+      "cameras": 4
+    },
+    "four-rgb": {
+      "cameras": 4,
+      "converter": "RGB"
+    },
+    "padded-rgb": {
+      "cameras": 4,
+      "width": 160,
+      "height": 128,
+      "padding": 16,
+      "frames": 30,
+      "fps_num": 60,
+      "converter": "RGB"
+    },
+    "interrupted-l8": {
+      "cameras": 4,
+      "width": 160,
+      "height": 128,
+      "frames": 60,
+      "fps_num": 60,
+      "interrupt_camera": 2,
+      "interrupt_after": 15
+    },
+    "invalid-format-rgb": {
+      "width": 160,
+      "height": 128,
+      "frames": 20,
+      "fps_num": 60,
+      "converter": "RGB",
+      "malformed_camera": 0,
+      "malformed_kind": 1
+    },
+    "invalid-size-l8": {
+      "width": 160,
+      "height": 128,
+      "frames": 20,
+      "fps_num": 60,
+      "malformed_camera": 0,
+      "malformed_kind": 2
+    },
+    "invalid-stride-rgb": {
+      "width": 160,
+      "height": 128,
+      "frames": 20,
+      "fps_num": 60,
+      "converter": "RGB",
+      "malformed_camera": 0,
+      "malformed_kind": 3
+    },
+    "slow-rgb": {
+      "cameras": 4,
+      "width": 160,
+      "height": 128,
+      "frames": 60,
+      "fps_num": 120,
+      "queue_capacity": 2,
+      "consumer_delay_ms": 35,
+      "converter": "RGB"
+    },
+    "manual-stop-rgb": {
+      "cameras": 4,
+      "width": 160,
+      "height": 128,
+      "converter": "RGB",
+      "manual_stop_after_ms": 120
+    },
+    "restart-l8": {
+      "cameras": 4,
+      "width": 160,
+      "height": 128,
+      "frames": 30,
+      "fps_num": 60,
+      "session_id": 2
+    },
+    "stereo-rgb": {
+      "cameras": 2,
+      "width": 160,
+      "height": 128,
+      "padding": 16,
+      "frames": 30,
+      "fps_num": 60,
+      "converter": "RGB",
+      "pairing": true
+    }
+  }
+}

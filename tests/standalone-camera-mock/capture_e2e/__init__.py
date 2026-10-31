@@ -1,0 +1,1 @@
+"""Native Capture integration demonstration."""

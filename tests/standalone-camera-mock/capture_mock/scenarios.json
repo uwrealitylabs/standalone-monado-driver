@@ -1,0 +1,90 @@
+{
+  "schema_version": 1,
+  "evidence_role": "Synthetic image inputs; measured local component execution",
+  "defaults": {
+    "width": 640,
+    "height": 480,
+    "padding": 0,
+    "fps_num": 30,
+    "fps_den": 1,
+    "frames": 150,
+    "seed": 1,
+    "queue_capacity": 16,
+    "hold_first": true,
+    "session_id": 1,
+    "timeout_ms": 15000,
+    "consumer_delay_ms": 0,
+    "cameras": 1,
+    "interrupt_camera": null,
+    "interrupt_after": null,
+    "malformed_camera": null,
+    "malformed_sequence": 5,
+    "malformed_kind": 0,
+    "cv": {
+      "max_corners": 48,
+      "quality_level": 0.05,
+      "min_distance": 8,
+      "block_size": 3
+    },
+    "source_mode": "individual"
+  },
+  "cases": {
+    "one-camera": {},
+    "four-camera": {
+      "cameras": 4
+    },
+    "padded-rows": {
+      "cameras": 4,
+      "width": 160,
+      "height": 128,
+      "padding": 16,
+      "frames": 30,
+      "fps_num": 120
+    },
+    "slow-consumer": {
+      "width": 160,
+      "height": 128,
+      "frames": 60,
+      "fps_num": 120,
+      "queue_capacity": 2,
+      "consumer_delay_ms": 35
+    },
+    "interrupted-stream": {
+      "cameras": 4,
+      "width": 160,
+      "height": 128,
+      "frames": 60,
+      "fps_num": 60,
+      "interrupt_camera": 2,
+      "interrupt_after": 15
+    },
+    "invalid-format": {
+      "width": 160,
+      "height": 128,
+      "frames": 20,
+      "fps_num": 60,
+      "malformed_camera": 0,
+      "malformed_kind": 1
+    },
+    "invalid-size": {
+      "width": 160,
+      "height": 128,
+      "frames": 20,
+      "fps_num": 60,
+      "malformed_camera": 0,
+      "malformed_kind": 2
+    },
+    "invalid-stride": {
+      "width": 160,
+      "height": 128,
+      "frames": 20,
+      "fps_num": 60,
+      "malformed_camera": 0,
+      "malformed_kind": 3
+    },
+    "group-four-camera": {
+      "cameras": 4,
+      "source_mode": "image-bundle"
+    }
+  }
+}

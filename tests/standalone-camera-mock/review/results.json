@@ -1,0 +1,480 @@
+{
+  "schema_version": 1,
+  "validated_at_utc": "2026-10-29T01:30:37.636291+00:00",
+  "date_local": "2026-10-28",
+  "role": "Fresh local team-checkout component validation; no runtime/Builder or hardware execution",
+  "base_revision": "3400e2f98b20fba8002aeb37ab1a4b509be5e866",
+  "branch": "mock-camera-input",
+  "git_worktree_clean_at_test": false,
+  "command": ".venv/bin/python tests/standalone-camera-mock/run.py",
+  "report": "results/validation/20261029T012650653463Z/suite/index.html",
+  "validation": "results/validation/20261029T012650653463Z/validation.json",
+  "original_python_tests_passed": 31,
+  "integration_python_tests_passed": 5,
+  "native_tests_passed": 5,
+  "native_test_names": [
+    "native_capture_to_rgb_pairing",
+    "native_matrix_conversion_pairing",
+    "unchanged_monado_queue",
+    "native_capture_lifecycle",
+    "native_image_bundle_handoff"
+  ],
+  "main_scenarios_passed": 12,
+  "scenario_totals": {
+    "one-l8": {
+      "passed": true,
+      "generated": 150,
+      "guard_rejected": 0,
+      "received": 150,
+      "processed": 150,
+      "dropped": 0,
+      "duplicates": 0,
+      "pixel_baseline": {
+        "applicable": true,
+        "matched_frames": 150,
+        "baseline_report": "20261026T145832963346Z",
+        "baseline_fixture_sha256": "efdc2a9616669b486c8aac173ac142e8a720f53ec708fa92fd7f47973b5c94bd"
+      }
+    },
+    "four-l8": {
+      "passed": true,
+      "generated": 600,
+      "guard_rejected": 0,
+      "received": 600,
+      "processed": 600,
+      "dropped": 0,
+      "duplicates": 0,
+      "pixel_baseline": {
+        "applicable": true,
+        "matched_frames": 600,
+        "baseline_report": "20261026T145832963346Z",
+        "baseline_fixture_sha256": "efdc2a9616669b486c8aac173ac142e8a720f53ec708fa92fd7f47973b5c94bd"
+      }
+    },
+    "four-rgb": {
+      "passed": true,
+      "generated": 600,
+      "guard_rejected": 0,
+      "received": 600,
+      "processed": 600,
+      "dropped": 0,
+      "duplicates": 0,
+      "pixel_baseline": {
+        "applicable": true,
+        "matched_frames": 600,
+        "baseline_report": "20261026T145832963346Z",
+        "baseline_fixture_sha256": "efdc2a9616669b486c8aac173ac142e8a720f53ec708fa92fd7f47973b5c94bd"
+      }
+    },
+    "padded-rgb": {
+      "passed": true,
+      "generated": 120,
+      "guard_rejected": 0,
+      "received": 120,
+      "processed": 120,
+      "dropped": 0,
+      "duplicates": 0,
+      "pixel_baseline": {
+        "applicable": false,
+        "reason": "Not a normal historical baseline case"
+      }
+    },
+    "interrupted-l8": {
+      "passed": true,
+      "generated": 195,
+      "guard_rejected": 0,
+      "received": 195,
+      "processed": 195,
+      "dropped": 0,
+      "duplicates": 0,
+      "pixel_baseline": {
+        "applicable": false,
+        "reason": "Not a normal historical baseline case"
+      }
+    },
+    "invalid-format-rgb": {
+      "passed": true,
+      "generated": 20,
+      "guard_rejected": 1,
+      "received": 19,
+      "processed": 19,
+      "dropped": 0,
+      "duplicates": 0,
+      "pixel_baseline": {
+        "applicable": false,
+        "reason": "Not a normal historical baseline case"
+      }
+    },
+    "invalid-size-l8": {
+      "passed": true,
+      "generated": 20,
+      "guard_rejected": 1,
+      "received": 19,
+      "processed": 19,
+      "dropped": 0,
+      "duplicates": 0,
+      "pixel_baseline": {
+        "applicable": false,
+        "reason": "Not a normal historical baseline case"
+      }
+    },
+    "invalid-stride-rgb": {
+      "passed": true,
+      "generated": 20,
+      "guard_rejected": 1,
+      "received": 19,
+      "processed": 19,
+      "dropped": 0,
+      "duplicates": 0,
+      "pixel_baseline": {
+        "applicable": false,
+        "reason": "Not a normal historical baseline case"
+      }
+    },
+    "slow-rgb": {
+      "passed": true,
+      "generated": 240,
+      "guard_rejected": 0,
+      "received": 60,
+      "processed": 60,
+      "dropped": 180,
+      "duplicates": 0,
+      "pixel_baseline": {
+        "applicable": false,
+        "reason": "Not a normal historical baseline case"
+      }
+    },
+    "manual-stop-rgb": {
+      "passed": true,
+      "generated": 12,
+      "guard_rejected": 0,
+      "received": 12,
+      "processed": 12,
+      "dropped": 0,
+      "duplicates": 0,
+      "pixel_baseline": {
+        "applicable": false,
+        "reason": "Not a normal historical baseline case"
+      }
+    },
+    "restart-l8": {
+      "passed": true,
+      "generated": 120,
+      "guard_rejected": 0,
+      "received": 120,
+      "processed": 120,
+      "dropped": 0,
+      "duplicates": 0,
+      "pixel_baseline": {
+        "applicable": false,
+        "reason": "Not a normal historical baseline case"
+      }
+    },
+    "stereo-rgb": {
+      "passed": true,
+      "generated": 60,
+      "guard_rejected": 0,
+      "received": 60,
+      "processed": 60,
+      "dropped": 0,
+      "duplicates": 0,
+      "pixel_baseline": {
+        "applicable": false,
+        "reason": "Not a normal historical baseline case"
+      }
+    }
+  },
+  "normal_four_stream_measurements": {
+    "four-l8": {
+      "0": {
+        "generated": 150,
+        "guard_rejected": 0,
+        "received": 150,
+        "processed": 150,
+        "dropped": 0,
+        "missing_sequences": [],
+        "duplicates": 0,
+        "processing_time": {
+          "median_ms": 3.9699999999999998,
+          "p95_ms": 4.6608,
+          "max_ms": 5.629
+        },
+        "source_output_to_receive": {
+          "median_ms": 0.0645,
+          "p95_ms": 0.12984999999999988,
+          "max_ms": 0.729
+        },
+        "observed_processed_fps": 29.98899665471736,
+        "native_source_peak_frames": 2,
+        "source_live_frames_before_teardown": 2,
+        "checks": {
+          "generated": true,
+          "native_source_success": true,
+          "source_accounted": true,
+          "guard_rejections": true,
+          "delivery_accounted": true,
+          "sequence_order": true,
+          "source_metadata_preserved": true,
+          "clock_order": true,
+          "drop_policy": true
+        }
+      },
+      "1": {
+        "generated": 150,
+        "guard_rejected": 0,
+        "received": 150,
+        "processed": 150,
+        "dropped": 0,
+        "missing_sequences": [],
+        "duplicates": 0,
+        "processing_time": {
+          "median_ms": 3.9939999999999998,
+          "p95_ms": 4.6783,
+          "max_ms": 5.988
+        },
+        "source_output_to_receive": {
+          "median_ms": 0.065,
+          "p95_ms": 0.146,
+          "max_ms": 0.726
+        },
+        "observed_processed_fps": 30.01413887521914,
+        "native_source_peak_frames": 2,
+        "source_live_frames_before_teardown": 1,
+        "checks": {
+          "generated": true,
+          "native_source_success": true,
+          "source_accounted": true,
+          "guard_rejections": true,
+          "delivery_accounted": true,
+          "sequence_order": true,
+          "source_metadata_preserved": true,
+          "clock_order": true,
+          "drop_policy": true
+        }
+      },
+      "2": {
+        "generated": 150,
+        "guard_rejected": 0,
+        "received": 150,
+        "processed": 150,
+        "dropped": 0,
+        "missing_sequences": [],
+        "duplicates": 0,
+        "processing_time": {
+          "median_ms": 3.9805,
+          "p95_ms": 4.62855,
+          "max_ms": 5.542
+        },
+        "source_output_to_receive": {
+          "median_ms": 0.0675,
+          "p95_ms": 0.15055,
+          "max_ms": 0.717
+        },
+        "observed_processed_fps": 30.00149604775594,
+        "native_source_peak_frames": 2,
+        "source_live_frames_before_teardown": 2,
+        "checks": {
+          "generated": true,
+          "native_source_success": true,
+          "source_accounted": true,
+          "guard_rejections": true,
+          "delivery_accounted": true,
+          "sequence_order": true,
+          "source_metadata_preserved": true,
+          "clock_order": true,
+          "drop_policy": true
+        }
+      },
+      "3": {
+        "generated": 150,
+        "guard_rejected": 0,
+        "received": 150,
+        "processed": 150,
+        "dropped": 0,
+        "missing_sequences": [],
+        "duplicates": 0,
+        "processing_time": {
+          "median_ms": 3.974,
+          "p95_ms": 4.6114999999999995,
+          "max_ms": 5.404
+        },
+        "source_output_to_receive": {
+          "median_ms": 0.066,
+          "p95_ms": 0.12655,
+          "max_ms": 0.736
+        },
+        "observed_processed_fps": 30.01099530358136,
+        "native_source_peak_frames": 2,
+        "source_live_frames_before_teardown": 1,
+        "checks": {
+          "generated": true,
+          "native_source_success": true,
+          "source_accounted": true,
+          "guard_rejections": true,
+          "delivery_accounted": true,
+          "sequence_order": true,
+          "source_metadata_preserved": true,
+          "clock_order": true,
+          "drop_policy": true
+        }
+      }
+    },
+    "four-rgb": {
+      "0": {
+        "generated": 150,
+        "guard_rejected": 0,
+        "received": 150,
+        "processed": 150,
+        "dropped": 0,
+        "missing_sequences": [],
+        "duplicates": 0,
+        "processing_time": {
+          "median_ms": 4.574999999999999,
+          "p95_ms": 5.807099999999998,
+          "max_ms": 8.449
+        },
+        "source_output_to_receive": {
+          "median_ms": 0.253,
+          "p95_ms": 0.34094999999999986,
+          "max_ms": 1.8
+        },
+        "observed_processed_fps": 30.038959926213025,
+        "native_source_peak_frames": 1,
+        "source_live_frames_before_teardown": 0,
+        "checks": {
+          "generated": true,
+          "native_source_success": true,
+          "source_accounted": true,
+          "guard_rejections": true,
+          "delivery_accounted": true,
+          "sequence_order": true,
+          "source_metadata_preserved": true,
+          "clock_order": true,
+          "drop_policy": true
+        }
+      },
+      "1": {
+        "generated": 150,
+        "guard_rejected": 0,
+        "received": 150,
+        "processed": 150,
+        "dropped": 0,
+        "missing_sequences": [],
+        "duplicates": 0,
+        "processing_time": {
+          "median_ms": 4.539,
+          "p95_ms": 5.68295,
+          "max_ms": 8.067
+        },
+        "source_output_to_receive": {
+          "median_ms": 0.254,
+          "p95_ms": 0.5581999999999983,
+          "max_ms": 1.798
+        },
+        "observed_processed_fps": 30.02777871824512,
+        "native_source_peak_frames": 1,
+        "source_live_frames_before_teardown": 0,
+        "checks": {
+          "generated": true,
+          "native_source_success": true,
+          "source_accounted": true,
+          "guard_rejections": true,
+          "delivery_accounted": true,
+          "sequence_order": true,
+          "source_metadata_preserved": true,
+          "clock_order": true,
+          "drop_policy": true
+        }
+      },
+      "2": {
+        "generated": 150,
+        "guard_rejected": 0,
+        "received": 150,
+        "processed": 150,
+        "dropped": 0,
+        "missing_sequences": [],
+        "duplicates": 0,
+        "processing_time": {
+          "median_ms": 4.524,
+          "p95_ms": 5.830099999999999,
+          "max_ms": 8.17
+        },
+        "source_output_to_receive": {
+          "median_ms": 0.255,
+          "p95_ms": 0.5232499999999994,
+          "max_ms": 1.801
+        },
+        "observed_processed_fps": 30.05986149061406,
+        "native_source_peak_frames": 1,
+        "source_live_frames_before_teardown": 0,
+        "checks": {
+          "generated": true,
+          "native_source_success": true,
+          "source_accounted": true,
+          "guard_rejections": true,
+          "delivery_accounted": true,
+          "sequence_order": true,
+          "source_metadata_preserved": true,
+          "clock_order": true,
+          "drop_policy": true
+        }
+      },
+      "3": {
+        "generated": 150,
+        "guard_rejected": 0,
+        "received": 150,
+        "processed": 150,
+        "dropped": 0,
+        "missing_sequences": [],
+        "duplicates": 0,
+        "processing_time": {
+          "median_ms": 4.529,
+          "p95_ms": 5.70985,
+          "max_ms": 7.885
+        },
+        "source_output_to_receive": {
+          "median_ms": 0.258,
+          "p95_ms": 0.6467999999999974,
+          "max_ms": 1.814
+        },
+        "observed_processed_fps": 30.02409988151563,
+        "native_source_peak_frames": 1,
+        "source_live_frames_before_teardown": 0,
+        "checks": {
+          "generated": true,
+          "native_source_success": true,
+          "source_accounted": true,
+          "guard_rejections": true,
+          "delivery_accounted": true,
+          "sequence_order": true,
+          "source_metadata_preserved": true,
+          "clock_order": true,
+          "drop_policy": true
+        }
+      }
+    }
+  },
+  "historical_pixel_hashes_matched": 1350,
+  "focused_command_reports": {
+    "four-l8": "results/validation/20261029T012855138809Z/demo/index.html",
+    "four-rgb": "results/validation/20261029T012921181765Z/demo/index.html"
+  },
+  "four_l8_focused_cwd": "/private/tmp",
+  "preservation": {
+    "original_project_files_unchanged": 969,
+    "native_source_and_header_files_byte_identical": 12,
+    "original_python_test_files_byte_identical": 3,
+    "public_frame_cv_observer_byte_identical": true,
+    "protected_monado_files_match": 124,
+    "runtime_and_hmd_builder_sources_unchanged": true,
+    "verified_case_artifact_hashes": 94,
+    "verified_case_source_snapshot_hashes": 2052
+  },
+  "scope_limits": [
+    "production receiver/Builder not integrated",
+    "full tracking/runtime not tested",
+    "Qualcomm stack, hardware support/exposure sync/IMU and RB5/EB5 not tested",
+    "no sanitizer rerun for this port; no independent-member reproduction yet"
+  ],
+  "git_actions": "No stage, commit, push, merge into dev, or pull request performed"
+}

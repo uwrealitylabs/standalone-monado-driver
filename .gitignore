@@ -120,3 +120,6 @@ result/
 
 # Ignore logs
 *.log
+
+# Local environment for the optional camera component demonstration
+/.venv/

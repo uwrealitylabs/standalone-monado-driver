@@ -1,0 +1,54 @@
+{
+  "description": "Hand-specified 64x64 grayscale fixture: camera 0, sequence 0, seed 1, session 1, eight padding bytes per row",
+  "width": 64,
+  "height": 64,
+  "padding": 8,
+  "seed": 1,
+  "session_id": 1,
+  "expected_header": [
+    87,
+    82,
+    76,
+    1,
+    0,
+    0,
+    0,
+    0,
+    0,
+    1,
+    0,
+    1,
+    0,
+    0,
+    0,
+    0
+  ],
+  "expected_pixels": [
+    {
+      "x": 16,
+      "y": 0,
+      "value": 200
+    },
+    {
+      "x": 16,
+      "y": 16,
+      "value": 40
+    },
+    {
+      "x": 0,
+      "y": 16,
+      "value": 200
+    },
+    {
+      "x": 33,
+      "y": 32,
+      "value": 250
+    },
+    {
+      "x": 0,
+      "y": 32,
+      "value": 40
+    }
+  ],
+  "expected_padding_byte": 165
+}
