@@ -14,6 +14,7 @@
 #include "os/os_time.h"
 #include "xrt/xrt_defines.h"
 #include "xrt/xrt_device.h"
+#include "xrt/xrt_tracking.h"
 
 #include "math/m_relation_history.h"
 #include "math/m_api.h"
@@ -28,6 +29,8 @@
 #include "util/u_var.h"
 #include "util/u_visibility_mask.h"
 #include "xrt/xrt_results.h"
+
+#include "standalone_interface.h"
 
 #include <stdio.h>
 
@@ -50,6 +53,8 @@ struct standalone
 	struct xrt_pose pose;
 
 	enum u_logging_level log_level;
+
+	struct xrt_tracked_slam *slam;
 
 	// has built-in mutex so thread safe
 	struct m_relation_history *relation_hist;
@@ -110,12 +115,29 @@ standalone_get_tracked_pose(struct xrt_device *xdev,
 
 	struct xrt_space_relation relation = XRT_SPACE_RELATION_ZERO;
 
-	enum m_relation_history_result history_result =
-	    m_relation_history_get(hmd->relation_hist, at_timestamp_ns, &relation);
-	if (history_result == M_RELATION_HISTORY_RESULT_INVALID) {
-		// If you get in here, it means you did not push any poses into the relation history.
-		// You may want to handle this differently.
-		HMD_ERROR(hmd, "Internal error: no poses pushed?");
+	if (hmd->slam != NULL) {
+		xrt_tracked_slam_get_tracked_pose(hmd->slam, at_timestamp_ns, &relation);
+		if ((relation.relation_flags &
+		     (XRT_SPACE_RELATION_ORIENTATION_TRACKED_BIT | XRT_SPACE_RELATION_POSITION_TRACKED_BIT)) == 0) {
+			*out_relation = (struct xrt_space_relation)XRT_SPACE_RELATION_ZERO;
+			return XRT_SUCCESS;
+		}
+
+		// Convert Basalt axes as in twrap_slam. For replay the device and IMU share a pose.
+		relation.pose.position.y = -relation.pose.position.y;
+		relation.pose.position.z = -relation.pose.position.z;
+		relation.pose.orientation.y = -relation.pose.orientation.y;
+		relation.pose.orientation.z = -relation.pose.orientation.z;
+		relation.linear_velocity.y = -relation.linear_velocity.y;
+		relation.linear_velocity.z = -relation.linear_velocity.z;
+		relation.angular_velocity.y = -relation.angular_velocity.y;
+		relation.angular_velocity.z = -relation.angular_velocity.z;
+	} else {
+		enum m_relation_history_result history_result =
+		    m_relation_history_get(hmd->relation_hist, at_timestamp_ns, &relation);
+		if (history_result == M_RELATION_HISTORY_RESULT_INVALID) {
+			HMD_ERROR(hmd, "Internal error: no poses pushed?");
+		}
 	}
 
 	if ((relation.relation_flags & XRT_SPACE_RELATION_ORIENTATION_VALID_BIT) != 0) {
@@ -164,7 +186,7 @@ standalone_get_visibility_mask(struct xrt_device *xdev,
 }
 
 struct xrt_device *
-standalone_create(void)
+standalone_create(struct xrt_tracked_slam *slam)
 {
 	U_LOG_I("Standalone, hello world!");
 
@@ -173,6 +195,13 @@ standalone_create(void)
 	    (enum u_device_alloc_flags)(U_DEVICE_ALLOC_HMD | U_DEVICE_ALLOC_TRACKING_NONE);
 
 	struct standalone *hmd = U_DEVICE_ALLOCATE(struct standalone, flags, 1, 0);
+	if (hmd == NULL) {
+		return NULL;
+	}
+	hmd->slam = slam;
+	if (slam != NULL) {
+		hmd->base.tracking_origin->type = XRT_TRACKING_TYPE_OTHER;
+	}
 
 	// This list should be ordered, most preferred first.
 	size_t idx = 0;

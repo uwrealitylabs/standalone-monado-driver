@@ -8,6 +8,7 @@
  * @ingroup xrt_iface
  */
 
+#include "xrt/xrt_config_build.h"
 #include "xrt/xrt_config_drivers.h"
 #include "xrt/xrt_prober.h"
 #include "xrt/xrt_tracking.h"
@@ -22,8 +23,14 @@
 
 #include "standalone/standalone_interface.h"
 
+#if defined(XRT_FEATURE_SLAM) && defined(XRT_BUILD_DRIVER_EUROC)
+#include "euroc/euroc_interface.h"
+#include "tracking/t_tracking.h"
+#endif
+
 #include <assert.h>
 
+DEBUG_GET_ONCE_OPTION(standalone_euroc_path, "STANDALONE_EUROC_PATH", NULL)
 
 /*
  *
@@ -34,6 +41,35 @@
 static const char *driver_list[] = {
     "standalone",
 };
+
+#if defined(XRT_FEATURE_SLAM) && defined(XRT_BUILD_DRIVER_EUROC)
+static xrt_result_t
+standalone_start_euroc_replay(struct xrt_frame_context *xfctx, const char *path, struct xrt_tracked_slam **out_slam)
+{
+	struct euroc_player_config player_config;
+	euroc_player_fill_default_config_for(&player_config, path);
+	player_config.playback.play_from_start = true;
+	// The application requests poses in the runtime's monotonic clock.
+	player_config.playback.use_source_ts = false;
+
+	struct t_slam_tracker_config slam_config;
+	t_slam_fill_default_config(&slam_config);
+	slam_config.submit_from_start = true;
+	slam_config.cam_count = player_config.playback.cam_count;
+	if (slam_config.cam_count < 2 || slam_config.cam_count > player_config.dataset.cam_count) {
+		U_LOG_E("Invalid camera count for Standalone SLAM replay: %d", slam_config.cam_count);
+		return XRT_ERROR_DEVICE_CREATION_FAILED;
+	}
+
+	struct xrt_slam_sinks *sinks = NULL;
+	if (t_slam_create(xfctx, &slam_config, out_slam, &sinks) != 0 || t_slam_start(*out_slam) != 0) {
+		return XRT_ERROR_DEVICE_CREATION_FAILED;
+	}
+
+	struct xrt_fs *player = euroc_player_create(xfctx, path, &player_config);
+	return xrt_fs_slam_stream_start(player, sinks);
+}
+#endif
 
 
 /*
@@ -66,17 +102,25 @@ standalone_open_system_impl(struct xrt_builder *xb,
                            struct xrt_frame_context *xfctx,
                            struct t_builder_options *tbo)
 {
-	struct xrt_device *head = standalone_create();
+	struct xrt_tracked_slam *slam = NULL;
+	const char *path = debug_get_option_standalone_euroc_path();
+	if (path != NULL && path[0] != '\0') {
+#if defined(XRT_FEATURE_SLAM) && defined(XRT_BUILD_DRIVER_EUROC)
+		xrt_result_t ret = standalone_start_euroc_replay(xfctx, path, &slam);
+		if (ret != XRT_SUCCESS) {
+			return ret;
+		}
+#else
+		U_LOG_E("STANDALONE_EUROC_PATH requires XRT_FEATURE_SLAM and XRT_BUILD_DRIVER_EUROC");
+		return XRT_ERROR_DEVICE_CREATION_FAILED;
+#endif
+	}
 
-	// Make the objects be tracked in space.
-	//! @todo Make these be a option to the hmd create function, or just make it be there from the start.
-	//head->supported.orientation_tracking = true;
-	//head->supported.position_tracking = true;
-	//! @todo Create a shared tracking origin on the system devices struct instead.
-	//head->tracking_origin->type = XRT_TRACKING_TYPE_OTHER; // Just anything other then none.
-
-	// Assign to role(s).
-	tbo->head = head;
+	tbo->head = standalone_create(slam);
+	if (tbo->head == NULL) {
+		return XRT_ERROR_DEVICE_CREATION_FAILED;
+	}
+	xsysd->static_xdevs[xsysd->static_xdev_count++] = tbo->head;
 
 	return XRT_SUCCESS;
 }
