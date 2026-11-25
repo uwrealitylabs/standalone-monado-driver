@@ -116,6 +116,31 @@ standalone_sinks_merge(struct xrt_frame_context *xfctx,
 	}
 }
 
+void
+standalone_sinks_for_dataset(const struct xrt_slam_sinks *entry,
+                             uint32_t first_cam,
+                             uint32_t cam_count,
+                             bool with_motion,
+                             struct xrt_slam_sinks *out_dataset)
+{
+	U_ZERO(out_dataset);
+
+	for (uint32_t n = 0; n < cam_count && n < XRT_TRACKING_MAX_CAMS; n++) {
+		const uint32_t slot = first_cam + n;
+		if (slot >= STANDALONE_CAM_TRACKING_COUNT) {
+			break;
+		}
+		out_dataset->cams[n] = entry->cams[slot];
+	}
+	out_dataset->cam_count = (int)cam_count;
+
+	if (with_motion) {
+		out_dataset->imus[0] = entry->imus[STANDALONE_IMU_LEFT];
+		out_dataset->imu_count = 1;
+		out_dataset->gt = entry->gt;
+	}
+}
+
 uint32_t
 standalone_sinks_cam_mask(const struct xrt_slam_sinks *sinks)
 {

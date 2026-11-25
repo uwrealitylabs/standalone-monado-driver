@@ -163,6 +163,31 @@ standalone_sinks_merge(struct xrt_frame_context *xfctx,
                        struct xrt_slam_sinks *out_entry);
 
 /*!
+ * Make the sinks a replayed dataset is started with.
+ *
+ * A dataset numbers its cameras from 0. This places dataset camera `n` at
+ * headset slot `first_cam + n`, so that a dataset of, say, the two eye
+ * cameras can be replayed into the eye slots with a `first_cam` of
+ * @ref STANDALONE_CAM_EYE_LEFT. Dataset cameras that would land past the
+ * last tracking slot are left unconnected.
+ *
+ * @param      entry       The headset sink map (see @ref standalone_sinks_merge).
+ * @param      first_cam   Headset slot of dataset camera 0.
+ * @param      cam_count   Number of cameras in the dataset.
+ * @param      with_motion Connect the dataset's IMU to `imus[0]` and its ground truth to `gt`. Only
+ *                         meaningful for a dataset of the headset's own motion.
+ * @param[out] out_dataset Sinks indexed by dataset camera.
+ *
+ * @ingroup drv_standalone
+ */
+void
+standalone_sinks_for_dataset(const struct xrt_slam_sinks *entry,
+                             uint32_t first_cam,
+                             uint32_t cam_count,
+                             bool with_motion,
+                             struct xrt_slam_sinks *out_dataset);
+
+/*!
  * Which camera slots of @p sinks are filled in, as a mask.
  *
  * @ingroup drv_standalone

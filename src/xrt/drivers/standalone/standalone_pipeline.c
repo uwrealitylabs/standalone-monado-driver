@@ -14,6 +14,7 @@
 
 
 DEBUG_GET_ONCE_OPTION(standalone_euroc_path, "STANDALONE_EUROC_PATH", NULL)
+DEBUG_GET_ONCE_NUM_OPTION(standalone_euroc_first_cam, "STANDALONE_EUROC_FIRST_CAM", 0)
 DEBUG_GET_ONCE_OPTION(standalone_capture_impl, "STANDALONE_CAPTURE_IMPL", NULL)
 DEBUG_GET_ONCE_OPTION(standalone_slam_impl, "STANDALONE_SLAM_IMPL", NULL)
 DEBUG_GET_ONCE_OPTION(standalone_hand_impl, "STANDALONE_HAND_IMPL", NULL)
@@ -47,6 +48,11 @@ standalone_pipeline_fill_default_config(struct standalone_pipeline_config *confi
 	U_ZERO(config);
 
 	config->euroc_path = non_empty(debug_get_option_standalone_euroc_path());
+
+	// Out of range values are caught where the dataset's camera count is known.
+	long first_cam = debug_get_num_option_standalone_euroc_first_cam();
+	config->euroc_first_cam = first_cam < 0 ? 0 : (uint32_t)first_cam;
+
 	config->capture_impl = non_empty(debug_get_option_standalone_capture_impl());
 	config->slam_impl = non_empty(debug_get_option_standalone_slam_impl());
 	config->hand_impl = non_empty(debug_get_option_standalone_hand_impl());
@@ -65,16 +71,6 @@ standalone_pipeline_create(struct xrt_frame_context *xfctx,
 	const char *capture_impl = non_empty(config->capture_impl);
 	if (capture_impl == NULL) {
 		capture_impl = replay ? "euroc" : "null";
-	}
-
-	const char *slam_impl = non_empty(config->slam_impl);
-	if (slam_impl == NULL) {
-		slam_impl = (replay && standalone_slam_has_impl("t_slam")) ? "t_slam" : "null";
-		if (replay && !standalone_slam_has_impl("t_slam")) {
-			U_LOG_W(
-			    "Replaying a dataset without a SLAM tracker: t_slam is not in this build "
-			    "(needs XRT_FEATURE_SLAM)");
-		}
 	}
 
 	struct standalone_pipeline *sp = U_TYPED_CALLOC(struct standalone_pipeline);
@@ -96,6 +92,7 @@ standalone_pipeline_create(struct xrt_frame_context *xfctx,
 	struct standalone_capture_config capture_config = {
 	    .impl = capture_impl,
 	    .replay_path = non_empty(config->euroc_path),
+	    .replay_first_cam = config->euroc_first_cam,
 	};
 
 	sp->source = standalone_capture_create(xfctx, &capture_config, &sp->source_info);
@@ -104,6 +101,21 @@ standalone_pipeline_create(struct xrt_frame_context *xfctx,
 	}
 
 	// 3. The trackers.
+	const char *slam_impl = non_empty(config->slam_impl);
+	if (slam_impl == NULL) {
+		// A replayed dataset is tracked with t_slam, if it is one SLAM can run on: the front pair and IMU 0.
+		const bool slam_data = (sp->source_info.cam_mask & STANDALONE_CAMS_FRONT) == STANDALONE_CAMS_FRONT &&
+		                       (sp->source_info.imu_mask & STANDALONE_IMU_BIT(STANDALONE_IMU_LEFT)) != 0;
+		const bool have_t_slam = standalone_slam_has_impl("t_slam");
+
+		slam_impl = (sp->source_info.is_replay && slam_data && have_t_slam) ? "t_slam" : "null";
+		if (sp->source_info.is_replay && slam_data && !have_t_slam) {
+			U_LOG_W(
+			    "Replaying a dataset without a SLAM tracker: t_slam is not in this build "
+			    "(needs XRT_FEATURE_SLAM)");
+		}
+	}
+
 	struct standalone_slam_config slam_config = {
 	    .impl = slam_impl,
 	    .calib = &sp->calib,

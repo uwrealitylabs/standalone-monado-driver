@@ -263,6 +263,59 @@ TEST_CASE("standalone_sinks_merge")
 	xrt_frame_context_destroy_nodes(&xfctx);
 }
 
+TEST_CASE("standalone_sinks_for_dataset")
+{
+	RecordingFrameSink cams[STANDALONE_CAM_TRACKING_COUNT];
+	RecordingImuSink imu;
+	struct xrt_pose_sink gt = {};
+
+	struct xrt_slam_sinks entry = {};
+	for (uint32_t i = 0; i < STANDALONE_CAM_TRACKING_COUNT; i++) {
+		entry.cams[i] = &cams[i].base;
+	}
+	entry.imus[STANDALONE_IMU_LEFT] = &imu.base;
+	entry.gt = &gt;
+
+	struct xrt_slam_sinks dataset = {};
+
+	SECTION("a dataset of the headset's motion starts at slot 0 and brings its IMU and ground truth")
+	{
+		standalone_sinks_for_dataset(&entry, 0, 2, true, &dataset);
+
+		CHECK(dataset.cams[0] == entry.cams[STANDALONE_CAM_FRONT_LEFT]);
+		CHECK(dataset.cams[1] == entry.cams[STANDALONE_CAM_FRONT_RIGHT]);
+		CHECK(dataset.cams[2] == nullptr);
+		CHECK(dataset.imus[0] == entry.imus[STANDALONE_IMU_LEFT]);
+		CHECK(dataset.gt == entry.gt);
+	}
+
+	SECTION("an eye dataset goes to the eye slots, without IMU or ground truth")
+	{
+		standalone_sinks_for_dataset(&entry, STANDALONE_CAM_EYE_LEFT, 2, false, &dataset);
+
+		CHECK(dataset.cams[0] == entry.cams[STANDALONE_CAM_EYE_LEFT]);
+		CHECK(dataset.cams[1] == entry.cams[STANDALONE_CAM_EYE_RIGHT]);
+		CHECK(dataset.cams[2] == nullptr);
+		CHECK(dataset.imus[0] == nullptr);
+		CHECK(dataset.gt == nullptr);
+
+		// What the player pushes as its camera 1 arrives at the right eye camera's consumer.
+		struct xrt_frame xf = make_frame(STANDALONE_CAM_EYE_RIGHT, 77);
+		xrt_sink_push_frame(dataset.cams[1], &xf);
+		CHECK(cams[STANDALONE_CAM_EYE_RIGHT].timestamps == std::vector<int64_t>{77});
+		CHECK(cams[STANDALONE_CAM_FRONT_RIGHT].timestamps.empty());
+	}
+
+	SECTION("dataset cameras past the last slot are not connected")
+	{
+		standalone_sinks_for_dataset(&entry, STANDALONE_CAM_EYE_LEFT, 4, false, &dataset);
+
+		CHECK(dataset.cams[1] == entry.cams[STANDALONE_CAM_EYE_RIGHT]);
+		CHECK(dataset.cams[2] == nullptr);
+		CHECK(dataset.cams[3] == nullptr);
+	}
+}
+
 TEST_CASE("standalone_capture_output")
 {
 	std::vector<RecordingFrameSink *> order;

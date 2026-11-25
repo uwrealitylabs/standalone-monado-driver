@@ -26,14 +26,19 @@
  *
  * ## Options
  *
- * | Environment variable          | Meaning | Default |
- * |-------------------------------|---------|---------|
- * | `STANDALONE_EUROC_PATH`       | EuRoC dataset to replay | none: live capture |
- * | `STANDALONE_CAPTURE_IMPL`     | Capture implementation  | `euroc` if a dataset is given, else `null` |
- * | `STANDALONE_SLAM_IMPL`        | SLAM tracker implementation | `t_slam` if a dataset is given and it is built, else
- * `null` | | `STANDALONE_HAND_IMPL`        | Hand tracker implementation | `null` | | `STANDALONE_EYE_IMPL`         |
- * Eye tracker implementation  | `null` | | `STANDALONE_CALIBRATION_PATH` | Headset calibration file    | none: nominal
- * values |
+ * | Environment variable           | Meaning | Default |
+ * |--------------------------------|---------|---------|
+ * | `STANDALONE_EUROC_PATH`        | EuRoC dataset to replay | none: live capture |
+ * | `STANDALONE_EUROC_FIRST_CAM`   | Headset slot of the dataset's camera 0: 0 front, 2 side, 4 bottom, 6 eye | 0 |
+ * | `STANDALONE_CAPTURE_IMPL`      | Capture implementation  | `euroc` if a dataset is given, else `null` |
+ * | `STANDALONE_SLAM_IMPL`         | SLAM tracker implementation | `t_slam` if it is built and a dataset with the front
+ * pair and IMU is replayed, else `null` | | `STANDALONE_HAND_IMPL`         | Hand tracker implementation | `null` | |
+ * `STANDALONE_EYE_IMPL`          | Eye tracker implementation  | `null` | | `STANDALONE_CALIBRATION_PATH`  | Headset
+ * calibration file    | none: nominal values |
+ *
+ * A dataset replayed from slot 0 is taken to be of the headset's motion and
+ * also feeds the reference IMU. A dataset replayed from another slot (hand or
+ * eye cameras) only feeds cameras.
  *
  * @ingroup drv_standalone
  */
@@ -69,6 +74,9 @@ struct standalone_pipeline_config
 
 	//! EuRoC dataset to replay, NULL for none.
 	const char *euroc_path;
+
+	//! Headset slot that camera 0 of the replayed dataset goes to, see @ref standalone_camera.
+	uint32_t euroc_first_cam;
 
 	//! Headset calibration file, NULL for none.
 	const char *calibration_path;

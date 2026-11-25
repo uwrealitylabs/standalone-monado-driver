@@ -65,6 +65,9 @@ struct standalone_capture_config
 	//! Dataset for replaying implementations, NULL otherwise.
 	const char *replay_path;
 
+	//! Headset slot that camera 0 of the replayed dataset goes to, see @ref standalone_camera.
+	uint32_t replay_first_cam;
+
 	//! Frame rate per camera, 0 for the camera's nominal rate.
 	uint32_t cam_fps[STANDALONE_CAM_COUNT];
 
@@ -144,7 +147,12 @@ standalone_capture_null_create(struct xrt_frame_context *xfctx,
 #ifdef XRT_BUILD_DRIVER_EUROC
 /*!
  * "euroc": replays a dataset in EuRoC format with Monado's EuRoC player.
- * Dataset camera `n` goes to slot `cams[n]`, the dataset IMU to `imus[0]`.
+ *
+ * Dataset camera `n` goes to slot `cams[replay_first_cam + n]`. With a first
+ * camera of 0 the dataset is taken to be of the headset's motion: its IMU
+ * goes to `imus[0]` and its ground truth to `gt`. With any other first
+ * camera (a hand or eye dataset) its IMU and ground truth are not used; the
+ * player still needs an `imu0/data.csv` to exist.
  *
  * @ingroup drv_standalone
  */
