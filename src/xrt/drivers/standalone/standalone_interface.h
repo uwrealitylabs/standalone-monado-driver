@@ -19,25 +19,69 @@ extern "C" {
  *
  * @brief Driver for a Standalone HMD.
  *
- * Not detectable by USB VID/PID, the device is created by the standalone
+ * Not detectable by USB VID/PID, the devices are created by the standalone
  * builder (see t_builder_standalone_create) instead of a prober.
+ *
+ * ## Layout
+ *
+ * | File                         | What it fixes |
+ * |------------------------------|---------------|
+ * | standalone_hw.h              | The hardware: nine cameras, two IMUs, their indices and modes |
+ * | standalone_sinks.h           | The headset sink map and the data contract between capture and trackers |
+ * | standalone_calibration.h     | Frames and the calibration handed to trackers and devices |
+ * | standalone_capture.h         | Capture: an @ref xrt_fs per implementation, in `capture/` |
+ * | standalone_slam.h            | SLAM tracker interface, implementations in `slam/` |
+ * | standalone_hand.h            | Hand tracker interface, implementations in `hand/` |
+ * | standalone_eye.h             | Eye tracker interface, implementations in `eye/` |
+ * | standalone_pipeline.h        | Creates one source and three trackers and connects them |
+ * | standalone_interface.h       | The three devices, created by the builder |
+ *
+ * Implementations of capture and of each tracker are interchangeable behind
+ * their interface and are selected by name at startup. Each has an empty
+ * implementation called "null". The devices, the pipeline and the builder
+ * do not change when an implementation does.
  *
  * See @ref writing-driver for additional information.
  */
 
-struct xrt_tracked_slam;
+struct xrt_device;
+struct standalone_slam_tracker;
+struct standalone_hand_tracker;
+struct standalone_eye_tracker;
 
 /*!
- * Create a Standalone HMD.
+ * Create the Standalone HMD: head pose, views and display description.
  *
- * @param slam Optional tracker owned by the system's frame context.
+ * @param slam Where the head pose comes from. Owned by the system's frame context.
  *
  * This is only exposed so that the builder (in the target)
  * can call the construction function (in the driver)
  * @ingroup drv_standalone
  */
 struct xrt_device *
-standalone_create(struct xrt_tracked_slam *slam);
+standalone_hmd_create(struct standalone_slam_tracker *slam);
+
+/*!
+ * Create the Standalone hand tracking device: the joints of both hands.
+ *
+ * @param hand Where the joints come from. Owned by the system's frame context.
+ * @param head The HMD, for the head pose the joints are relative to. Must outlive this device's use.
+ *
+ * @ingroup drv_standalone
+ */
+struct xrt_device *
+standalone_hand_device_create(struct standalone_hand_tracker *hand, struct xrt_device *head);
+
+/*!
+ * Create the Standalone eye tracking device: the gaze.
+ *
+ * @param eye  Where the gaze comes from. Owned by the system's frame context.
+ * @param head The HMD, for the head pose the gaze is relative to. Must outlive this device's use.
+ *
+ * @ingroup drv_standalone
+ */
+struct xrt_device *
+standalone_eye_device_create(struct standalone_eye_tracker *eye, struct xrt_device *head);
 
 /*!
  * @dir drivers/standalone

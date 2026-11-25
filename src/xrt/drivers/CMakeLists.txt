@@ -471,9 +471,52 @@ endif()
 
 if(XRT_BUILD_DRIVER_STANDALONE)
 	add_library(
-		drv_standalone STATIC standalone/standalone_hmd.c standalone/standalone_interface.h
+		drv_standalone STATIC
+		standalone/standalone_calibration.c
+		standalone/standalone_calibration.h
+		standalone/standalone_capture.c
+		standalone/standalone_capture.h
+		standalone/standalone_eye.c
+		standalone/standalone_eye.h
+		standalone/standalone_eye_device.c
+		standalone/standalone_hand.c
+		standalone/standalone_hand.h
+		standalone/standalone_hand_device.c
+		standalone/standalone_hmd.c
+		standalone/standalone_hw.c
+		standalone/standalone_hw.h
+		standalone/standalone_interface.h
+		standalone/standalone_pipeline.c
+		standalone/standalone_pipeline.h
+		standalone/standalone_sinks.c
+		standalone/standalone_sinks.h
+		standalone/standalone_slam.c
+		standalone/standalone_slam.h
+		# Implementations: one file each, listed in the table of their interface's .c file.
+		standalone/capture/standalone_capture_null.c
+		standalone/eye/standalone_eye_null.c
+		standalone/hand/standalone_hand_null.c
+		standalone/slam/standalone_slam_null.c
 		)
-	target_link_libraries(drv_standalone PRIVATE xrt-interfaces aux_util)
+	target_link_libraries(
+		drv_standalone
+		PRIVATE
+			xrt-interfaces
+			aux_util
+			aux_util_sink
+			aux_math
+			drv_includes
+		)
+	# Dataset replay, through Monado's EuRoC player.
+	if(XRT_BUILD_DRIVER_EUROC)
+		target_sources(drv_standalone PRIVATE standalone/capture/standalone_capture_euroc.c)
+		target_link_libraries(drv_standalone PRIVATE drv_euroc)
+	endif()
+	# Monado's SLAM tracker, which loads an external SLAM system through VIT.
+	if(XRT_FEATURE_SLAM)
+		target_sources(drv_standalone PRIVATE standalone/slam/standalone_slam_t_slam.c)
+		target_link_libraries(drv_standalone PRIVATE aux_tracking)
+	endif()
 	list(APPEND ENABLED_DRIVERS standalone)
 endif()
 

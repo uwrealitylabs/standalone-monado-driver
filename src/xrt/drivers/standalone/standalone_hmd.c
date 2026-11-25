@@ -16,7 +16,6 @@
 #include "xrt/xrt_device.h"
 #include "xrt/xrt_tracking.h"
 
-#include "math/m_relation_history.h"
 #include "math/m_api.h"
 #include "math/m_mathinclude.h" // IWYU pragma: keep
 
@@ -30,7 +29,9 @@
 #include "util/u_visibility_mask.h"
 #include "xrt/xrt_results.h"
 
+#include "standalone_hw.h"
 #include "standalone_interface.h"
+#include "standalone_slam.h"
 
 #include <stdio.h>
 
@@ -50,14 +51,10 @@ struct standalone
 {
 	struct xrt_device base;
 
-	struct xrt_pose pose;
-
 	enum u_logging_level log_level;
 
-	struct xrt_tracked_slam *slam;
-
-	// has built-in mutex so thread safe
-	struct m_relation_history *relation_hist;
+	//! Where the head pose comes from. Owned by the frame context, outlives the device.
+	struct standalone_slam_tracker *slam;
 };
 
 
@@ -82,9 +79,6 @@ standalone_destroy(struct xrt_device *xdev)
 
 	// Remove the variable tracking.
 	u_var_remove_root(hmd);
-
-
-	m_relation_history_destroy(&hmd->relation_hist);
 
 	u_device_free(&hmd->base);
 }
@@ -113,32 +107,9 @@ standalone_get_tracked_pose(struct xrt_device *xdev,
 		return XRT_ERROR_INPUT_UNSUPPORTED;
 	}
 
+	// The tracker reports the head frame in tracking space, nothing to compose here.
 	struct xrt_space_relation relation = XRT_SPACE_RELATION_ZERO;
-
-	if (hmd->slam != NULL) {
-		xrt_tracked_slam_get_tracked_pose(hmd->slam, at_timestamp_ns, &relation);
-		if ((relation.relation_flags &
-		     (XRT_SPACE_RELATION_ORIENTATION_TRACKED_BIT | XRT_SPACE_RELATION_POSITION_TRACKED_BIT)) == 0) {
-			*out_relation = (struct xrt_space_relation)XRT_SPACE_RELATION_ZERO;
-			return XRT_SUCCESS;
-		}
-
-		// Convert Basalt axes as in twrap_slam. For replay the device and IMU share a pose.
-		relation.pose.position.y = -relation.pose.position.y;
-		relation.pose.position.z = -relation.pose.position.z;
-		relation.pose.orientation.y = -relation.pose.orientation.y;
-		relation.pose.orientation.z = -relation.pose.orientation.z;
-		relation.linear_velocity.y = -relation.linear_velocity.y;
-		relation.linear_velocity.z = -relation.linear_velocity.z;
-		relation.angular_velocity.y = -relation.angular_velocity.y;
-		relation.angular_velocity.z = -relation.angular_velocity.z;
-	} else {
-		enum m_relation_history_result history_result =
-		    m_relation_history_get(hmd->relation_hist, at_timestamp_ns, &relation);
-		if (history_result == M_RELATION_HISTORY_RESULT_INVALID) {
-			HMD_ERROR(hmd, "Internal error: no poses pushed?");
-		}
-	}
+	standalone_slam_tracker_get_head_pose(hmd->slam, at_timestamp_ns, &relation);
 
 	if ((relation.relation_flags & XRT_SPACE_RELATION_ORIENTATION_VALID_BIT) != 0) {
 		// If we provide an orientation, make sure that it is normalized.
@@ -186,9 +157,12 @@ standalone_get_visibility_mask(struct xrt_device *xdev,
 }
 
 struct xrt_device *
-standalone_create(struct xrt_tracked_slam *slam)
+standalone_hmd_create(struct standalone_slam_tracker *slam)
 {
-	U_LOG_I("Standalone, hello world!");
+	if (slam == NULL) {
+		U_LOG_E("The Standalone HMD needs a SLAM tracker");
+		return NULL;
+	}
 
 	// This indicates you won't be using Monado's built-in tracking algorithms.
 	enum u_device_alloc_flags flags =
@@ -199,9 +173,7 @@ standalone_create(struct xrt_tracked_slam *slam)
 		return NULL;
 	}
 	hmd->slam = slam;
-	if (slam != NULL) {
-		hmd->base.tracking_origin->type = XRT_TRACKING_TYPE_OTHER;
-	}
+	hmd->base.tracking_origin->type = slam->tracking_type;
 
 	// This list should be ordered, most preferred first.
 	size_t idx = 0;
@@ -220,14 +192,11 @@ standalone_create(struct xrt_tracked_slam *slam)
 	// populate this with something more complex if required
 	// hmd->base.compute_distortion = standalone_compute_distortion;
 
-	hmd->pose = (struct xrt_pose)XRT_POSE_IDENTITY;
 	hmd->log_level = debug_get_log_option_standalone_log();
 
 	// Print name.
 	snprintf(hmd->base.str, XRT_DEVICE_NAME_LEN, "Standalone HMD");
 	snprintf(hmd->base.serial, XRT_DEVICE_NAME_LEN, "Standalone HMD S/N");
-
-	m_relation_history_create(&hmd->relation_hist);
 
 	// Setup input.
 	hmd->base.name = XRT_DEVICE_GENERIC_HMD;
@@ -238,7 +207,7 @@ standalone_create(struct xrt_tracked_slam *slam)
 
 	// Set up display details
 	// refresh rate
-	hmd->base.hmd->screens[0].nominal_frame_interval_ns = time_s_to_ns(1.0f / 90.0f);
+	hmd->base.hmd->screens[0].nominal_frame_interval_ns = time_s_to_ns(1.0f / (float)STANDALONE_PANEL_REFRESH_HZ);
 
 	const double hFOV = 90 * (M_PI / 180.0);
 	const double vFOV = 96.73 * (M_PI / 180.0);
@@ -258,8 +227,9 @@ standalone_create(struct xrt_tracked_slam *slam)
 		standalone_destroy(&hmd->base);
 		return NULL;
 	}
-	const int panel_w = 1080;
-	const int panel_h = 1200;
+	// One panel per eye, presented as one screen with the panels side by side.
+	const int panel_w = STANDALONE_PANEL_W_PIXELS;
+	const int panel_h = STANDALONE_PANEL_H_PIXELS;
 
 	// Single "screen" (always the case)
 	hmd->base.hmd->screens[0].w_pixels = panel_w * 2;
@@ -281,13 +251,6 @@ standalone_create(struct xrt_tracked_slam *slam)
 
 	// Distortion information, fills in xdev->compute_distortion().
 	u_distortion_mesh_set_none(&hmd->base);
-
-	// Just put an initial identity value in the tracker
-	struct xrt_space_relation identity = XRT_SPACE_RELATION_ZERO;
-	identity.relation_flags = (enum xrt_space_relation_flags)(XRT_SPACE_RELATION_ORIENTATION_TRACKED_BIT |
-	                                                          XRT_SPACE_RELATION_ORIENTATION_VALID_BIT);
-	uint64_t now = os_monotonic_get_ns();
-	m_relation_history_push(hmd->relation_hist, &identity, now);
 
 	// Setup variable tracker: Optional but useful for debugging
 	u_var_add_root(hmd, "Standalone HMD", true);

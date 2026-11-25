@@ -58,6 +58,9 @@ endif()
 if(TARGET ipc_server)
 	list(APPEND tests tests_ipc_thread_shutdown)
 endif()
+if(XRT_BUILD_DRIVER_STANDALONE)
+	list(APPEND tests tests_standalone_pipeline)
+endif()
 
 foreach(testname ${tests})
 	add_executable(${testname} ${testname}.cpp)
@@ -157,4 +160,10 @@ if(TARGET ipc_server)
 		)
 	target_link_libraries(tests_ipc_thread_shutdown PRIVATE ipc_shared aux_os base)
 	set_tests_properties(tests_ipc_thread_shutdown PROPERTIES TIMEOUT 10)
+endif()
+
+if(XRT_BUILD_DRIVER_STANDALONE)
+	target_link_libraries(
+		tests_standalone_pipeline PRIVATE xrt-interfaces drv_includes drv_standalone
+		)
 endif()
