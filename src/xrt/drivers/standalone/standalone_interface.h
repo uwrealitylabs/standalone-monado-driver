@@ -19,22 +19,25 @@ extern "C" {
  *
  * @brief Driver for a Standalone HMD.
  *
- * Does no actual work.
  * Not detectable by USB VID/PID, the device is created by the standalone
  * builder (see t_builder_standalone_create) instead of a prober.
  *
  * See @ref writing-driver for additional information.
  */
 
+struct xrt_tracked_slam;
+
 /*!
  * Create a Standalone HMD.
+ *
+ * @param slam Optional tracker owned by the system's frame context.
  *
  * This is only exposed so that the builder (in the target)
  * can call the construction function (in the driver)
  * @ingroup drv_standalone
  */
 struct xrt_device *
-standalone_create(void);
+standalone_create(struct xrt_tracked_slam *slam);
 
 /*!
  * @dir drivers/standalone
